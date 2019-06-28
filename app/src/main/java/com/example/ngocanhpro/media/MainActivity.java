@@ -1,5 +1,6 @@
 package com.example.ngocanhpro.media;
 
+import android.app.FragmentManager;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -10,27 +11,35 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.Fragment;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.example.ngocanhpro.media.enity.Song;
 import com.example.ngocanhpro.media.services.MusicService;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, FragmentListSong.ControlEventMusic, FragmentPlaySong.ControlPlayMedia {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, ControlPlayMedia,  LoaderManager.LoaderCallbacks<Cursor> {
     public ArrayList<Song> mListSong = new ArrayList<>();
     public MusicService musicSrv;
     private Intent playIntent;
+    FragmentPlaySong fragmentPlaySong = new FragmentPlaySong();
 
 
 
@@ -59,7 +68,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // chèn fragment danh sách bài hát lên main activity
         ft.replace(R.id.container, fragmentListSong);
         ft.commit();
-        getSongList();
+//        getSongList();
+        getSupportLoaderManager().initLoader(0, null, this);
         fragmentListSong.setListSong(mListSong);
 
 
@@ -103,6 +113,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
+
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        Log.v("activity", "pause");
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        Log.v("activity", "stop");
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -138,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void getSongList() {
         ContentResolver musicResolver = getContentResolver();
         Uri musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        Cursor musicCursor = musicResolver.query(musicUri, null, null, null, MediaStore.Audio.Media.TITLE);
+        Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
         if(musicCursor!=null && musicCursor.moveToFirst()){
             //get columns
             int titleColumn = musicCursor.getColumnIndex
@@ -171,16 +195,58 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void openFragmentPlayMusic(){
-        FragmentPlaySong fragmentPlaySong = new FragmentPlaySong();
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.container, fragmentPlaySong, "findThisFragment")
-                .addToBackStack(null)
-                .commit();
+
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+
+        if (fragmentPlaySong.isHidden()) {
+                ft.show(fragmentPlaySong);
+
+        } else {
+            ft.add(R.id.container, fragmentPlaySong, "findThisFragment")
+                    .addToBackStack(null);
+        }
+
+//        ft.add(R.id.container, fragmentPlaySong, "findThisFragment")
+//                .addToBackStack(null);
+
+//            if(fm.findFragmentById(R.id.fragment2).isHidden()) {
+//                ft.show(fragmentPlaySong);
+//                Log.v("show", "fragmentplaysong");
+//
+//        } else {
+//            ft .add(R.id.container, fragmentPlaySong, "findThisFragment")
+//                .addToBackStack(null);
+//        }
+        ft.commit();
     }
     @Override
     public void playSong(int pos){
         musicSrv.setSong(pos);
         musicSrv.playSong();
+    }
+
+    @Override
+    public  void setSeekbar1(SeekBar seekbar) {
+        musicSrv.setUIControls1(seekbar);
+    }
+
+    @Override
+    public  void setSeekbar2(SeekBar seekbar) {
+        musicSrv.setUIControls2(seekbar);
+    }
+
+    @Override
+    public void setNameSong1(TextView tv) {
+        musicSrv.setTextViewTitleSong1(tv);
+    }
+    @Override
+    public void setNameSong2(TextView tv) {
+        musicSrv.setTextViewTitleSong2(tv);
+    }
+
+    @Override
+    public void setTextTime(TextView tv1, TextView tv2) {
+        musicSrv.setTextTime(tv1, tv2);
     }
 
     @Override
@@ -214,23 +280,56 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         return musicSrv.getPosn();
     }
 
-    public void setUIControls(SeekBar seekBar) {
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    // Change current position of the song playback
-                    musicSrv.seek(progress);
-                }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int i, @Nullable Bundle bundle) {
+        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
+
+
+        String[] projection = {
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.DATA,
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.DURATION
+        };
+
+        return new CursorLoader(
+                this,
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                selection,
+                null,
+                null);
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor musicCursor) {
+        if(musicCursor!=null && musicCursor.moveToFirst()){
+            //get columns
+            int titleColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.TITLE);
+            int idColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media._ID);
+            int artistColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.ARTIST);
+            //add songs to list
+            do {
+                long thisId = musicCursor.getLong(idColumn);
+                String thisTitle = musicCursor.getString(titleColumn);
+                String thisArtist = musicCursor.getString(artistColumn);
+                mListSong.add(new Song(thisId, thisTitle, thisArtist));
             }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
+            while (musicCursor.moveToNext());
+        }
     }
 
 
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+
+    }
 }

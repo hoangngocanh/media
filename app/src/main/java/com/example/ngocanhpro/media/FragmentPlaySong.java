@@ -11,6 +11,9 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,45 +21,13 @@ import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-public class FragmentPlaySong extends Fragment implements Runnable {
+public class FragmentPlaySong extends Fragment {
     SeekBar seekBar;
+    TextView tvNameOfSong, tvTimeRun, tvTotalTime;
 
     ControlPlayMedia controlPlayMedia;
-    public interface ControlPlayMedia {
-        void pauseMedia();
-        boolean isPlaying();
-        int getDur();
-        int getCurrentPosition();
-        void playMedia();
-        void nextSong();
-        void prevSong();
-
-    }
-
-
-    public void setOnHeadlineSelectedListener(FragmentPlaySong.ControlPlayMedia control) {
+    public void setOnHeadlineSelectedListener(ControlPlayMedia control) {
         this.controlPlayMedia = control;
-    }
-
-    @Override
-    public void run(){
-        int currentPosition = controlPlayMedia.getCurrentPosition();
-        int total = controlPlayMedia.getDur();
-
-
-        while (controlPlayMedia.isPlaying() && currentPosition < total) {
-            try {
-                Thread.sleep(500);
-                currentPosition = controlPlayMedia.getCurrentPosition();
-            } catch (InterruptedException e) {
-                return;
-            } catch (Exception e) {
-                return;
-            }
-
-            seekBar.setProgress(currentPosition);
-
-        }
     }
 
 
@@ -64,6 +35,9 @@ public class FragmentPlaySong extends Fragment implements Runnable {
         View v = inflater.inflate(R.layout.fragment_play_music, container, false);
         final TextView nameSongView = (TextView) v.findViewById(R.id.title) ;
         seekBar = (SeekBar) v.findViewById(R.id.seekBar) ;
+        tvNameOfSong = (TextView) v.findViewById(R.id.name_song);
+        tvTimeRun = (TextView) v.findViewById(R.id.time_run);
+        tvTotalTime = (TextView) v.findViewById(R.id.total_time);
         Button btnPrev = (Button) v.findViewById(R.id.prev);
         btnPrev.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -71,6 +45,9 @@ public class FragmentPlaySong extends Fragment implements Runnable {
                controlPlayMedia.prevSong();
             }
         });
+        controlPlayMedia.setSeekbar2(seekBar);
+        controlPlayMedia.setNameSong2(tvNameOfSong);
+        controlPlayMedia.setTextTime(tvTimeRun,tvTotalTime);
 
         final Button btnPlay = (Button) v.findViewById(R.id.play);
         btnPlay.setOnClickListener(new View.OnClickListener() {
@@ -94,6 +71,7 @@ public class FragmentPlaySong extends Fragment implements Runnable {
                 controlPlayMedia.nextSong();
             }
         });
+        Log.d("FragmentListSong",":oncreatview");
 
 
         return v;
@@ -102,6 +80,41 @@ public class FragmentPlaySong extends Fragment implements Runnable {
 
 
 
+    @Override
+    public void onStart() {
+        Log.d("fragmentListSong", ": onStart");
+        super.onStart();
+    }
+
+    @Override
+    public void onResume() {
+        Log.d("fragmentListSong", ": onResume");
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        Log.d("fragmentPlaySong", ": onPause");
+        super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        Log.d("fragmentPlaySong", ": onStop");
+        super.onStop();
+    }
+
+    @Override
+    public void onDestroyView() {
+        Log.d("fragmentPlaySong", "fragmentListSong: onDestroyView");
+        super.onDestroyView();
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d("fragmentPlaySong", ": onDestroy");
+        super.onDestroy();
+    }
 
 
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#ffffff">
@@ -18,7 +18,7 @@
             android:textStyle="bold" />
         <ImageView
             android:layout_alignParentRight="true"
-            android:src="@drawable/ic_shuffle"
+            android:src="@drawable/ic_shuffle_1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </RelativeLayout>
@@ -26,8 +26,46 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/song_list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="50dp"
         android:scrollbars="vertical" />
 
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:background="#fffffe"
+        android:layout_width="match_parent"
+        android:layout_height="57dp">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_weight="5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
 
-</LinearLayout>
+            <SeekBar
+                android:id="@+id/seek_song"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="1000" />
+            <TextView
+                android:id="@+id/nameSong"
+                android:textSize="20dp"
+                android:text="tên bài hát"
+                android:textColor="#000"
+                android:layout_weight="4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/play_icon"
+            android:layout_weight="1"
+            android:background="@drawable/ic_pause"
+            android:layout_width="0dp"
+            android:layout_height="60dp" />
+    </LinearLayout>
+
+
+</RelativeLayout>

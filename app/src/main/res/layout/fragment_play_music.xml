@@ -2,12 +2,14 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/fragment2"
     android:background="#ffffff">
     <RelativeLayout
         android:layout_alignParentTop="true"
         android:layout_width="match_parent"
         android:layout_height="400dp">
         <TextView
+            android:id="@+id/name_song"
             android:text="Tên bài hát"
             android:textSize="20dp"
             android:layout_width="wrap_content"
@@ -49,13 +51,14 @@
             android:layout_height="wrap_content">
             <TextView
                 android:padding="5dp"
-                android:id="@+id/title"
+                android:id="@+id/time_run"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0:2"
                 android:textSize="18dp"
                 android:singleLine = "true" />
             <TextView
+                android:id="@+id/total_time"
                 android:padding="5dp"
                 android:layout_alignParentRight="true"
                 android:layout_width="wrap_content"
