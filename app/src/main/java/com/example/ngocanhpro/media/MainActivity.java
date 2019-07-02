@@ -1,13 +1,10 @@
 package com.example.ngocanhpro.media;
 
-import android.app.FragmentManager;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
@@ -27,7 +24,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.ngocanhpro.media.enity.Song;
@@ -35,15 +31,12 @@ import com.example.ngocanhpro.media.services.MusicService;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, ControlPlayMedia,  LoaderManager.LoaderCallbacks<Cursor> {
-    public ArrayList<Song> mListSong = new ArrayList<>();
-    public MusicService musicSrv;
-    private Intent playIntent;
-    FragmentPlaySong fragmentPlaySong = new FragmentPlaySong();
-
-
-
-
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, IControlPlayMedia,  LoaderManager.LoaderCallbacks<Cursor>, IMusicRemote {
+    private ArrayList<Song> mListSong = new ArrayList<>();
+    private MusicService mMusicSrv;
+    private Intent mPlayIntent;
+    public FragmentPlaySong fragmentPlaySong = new FragmentPlaySong();
+    public FragmentListSong fragmentListSong = new FragmentListSong();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         navigationView.setNavigationItemSelectedListener(this);
 
         //Hiển thị fragment
-        FragmentListSong fragmentListSong = new FragmentListSong();
+
         // Begin the transaction
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         // chèn fragment danh sách bài hát lên main activity
@@ -81,9 +74,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         public void onServiceConnected(ComponentName name, IBinder service) {
             MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
             //get service
-            musicSrv = binder.getService();
+            mMusicSrv = binder.getService();
             //pass list
-            musicSrv.setList(mListSong);
+            mMusicSrv.setList(mListSong);
+            setImusic();
         }
         @Override
         public void onServiceDisconnected(ComponentName name) {
@@ -94,10 +88,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public void onStart() {
         super.onStart();
-        if(playIntent==null){
-            playIntent = new Intent(this, MusicService.class);
-            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-            startService(playIntent);
+        if(mPlayIntent ==null){
+            mPlayIntent = new Intent(this, MusicService.class);
+            bindService(mPlayIntent, musicConnection, Context.BIND_AUTO_CREATE);
+            startService(mPlayIntent);
+
         }
     }
 
@@ -112,8 +107,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             super.onBackPressed();
         }
     }
-
-
 
     @Override
     public void onPause() {
@@ -151,35 +144,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (id == R.id.nav_manage) {
 
         } else if (id == R.id.nav_share) {
-
-
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    public void getSongList() {
-        ContentResolver musicResolver = getContentResolver();
-        Uri musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        Cursor musicCursor = musicResolver.query(musicUri, null, null, null, null);
-        if(musicCursor!=null && musicCursor.moveToFirst()){
-            //get columns
-            int titleColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.TITLE);
-            int idColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media._ID);
-            int artistColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.ARTIST);
-            //add songs to list
-            do {
-                long thisId = musicCursor.getLong(idColumn);
-                String thisTitle = musicCursor.getString(titleColumn);
-                String thisArtist = musicCursor.getString(artistColumn);
-                mListSong.add(new Song(thisId, thisTitle, thisArtist));
-            }
-            while (musicCursor.moveToNext());
-        }
     }
 
     @Override
@@ -188,96 +156,82 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             FragmentListSong fragmentListSong = (FragmentListSong) fragment;
             fragmentListSong.setOnHeadlineSelectedListener(this);
         } else if (fragment instanceof  FragmentPlaySong) {
-            FragmentPlaySong fragmentPlaySong = (FragmentPlaySong) fragment;
             fragmentPlaySong.setOnHeadlineSelectedListener(this);
         }
     }
 
     @Override
-    public void openFragmentPlayMusic(){
+    //lấy tên bài hát đang phát
+    public String getNameSong() {
+        return mMusicSrv.getSongTitle();
+    }
 
+    @Override
+    //mở fragment playmusic (hiển thị cửa sổ  chơi nhạc)
+    public void openFragmentPlayMusic(){
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
 
-        if (fragmentPlaySong.isHidden()) {
+        if (fragmentPlaySong.isAdded()) {
                 ft.show(fragmentPlaySong);
+                Log.d("fragment",": Added");
 
         } else {
             ft.add(R.id.container, fragmentPlaySong, "findThisFragment")
                     .addToBackStack(null);
         }
-
-//        ft.add(R.id.container, fragmentPlaySong, "findThisFragment")
-//                .addToBackStack(null);
-
-//            if(fm.findFragmentById(R.id.fragment2).isHidden()) {
-//                ft.show(fragmentPlaySong);
-//                Log.v("show", "fragmentplaysong");
-//
-//        } else {
-//            ft .add(R.id.container, fragmentPlaySong, "findThisFragment")
-//                .addToBackStack(null);
-//        }
         ft.commit();
     }
     @Override
+    //phát bài hát được chỉ định vị trí pos
     public void playSong(int pos){
-        musicSrv.setSong(pos);
-        musicSrv.playSong();
+        mMusicSrv.setSong(pos);
+        mMusicSrv.playSong();
     }
 
-    @Override
-    public  void setSeekbar1(SeekBar seekbar) {
-        musicSrv.setUIControls1(seekbar);
-    }
 
     @Override
-    public  void setSeekbar2(SeekBar seekbar) {
-        musicSrv.setUIControls2(seekbar);
-    }
-
-    @Override
-    public void setNameSong1(TextView tv) {
-        musicSrv.setTextViewTitleSong1(tv);
-    }
-    @Override
-    public void setNameSong2(TextView tv) {
-        musicSrv.setTextViewTitleSong2(tv);
-    }
-
-    @Override
-    public void setTextTime(TextView tv1, TextView tv2) {
-        musicSrv.setTextTime(tv1, tv2);
-    }
-
-    @Override
+    //Dừng bài hát
     public void pauseMedia(){
-            musicSrv.pausePlayer();
+            mMusicSrv.pausePlayer();
     }
     @Override
+    //Phát tiếp bài hát
     public void playMedia() {
-        musicSrv.go();
+        mMusicSrv.go();
     }
     @Override
+    //Phát bài hát tiếp theo
     public void nextSong(){
-        musicSrv.playNext();
+        mMusicSrv.playNext();
     }
     @Override
+    //chuyển bài hát trước
     public void prevSong(){
-        musicSrv.playPrev();
+        mMusicSrv.playPrev();
     }
 
     @Override
+    //Kiểm tra player đang phát hay dừng
     public boolean isPlaying(){
-        return musicSrv.isPng();
+        return mMusicSrv.isPng();
     }
 
     @Override
+    //Trả về tông thời gian phát bài hát
     public  int getDur(){
-        return musicSrv.getDur();
+        return mMusicSrv.getDur();
     }
+
     @Override
+    //Tua đến vị trí posn
+    public void seek(int posn) {
+        mMusicSrv.seek(posn);
+    }
+
+    @Override
+    //Trả về thời gian đã chạy của bài hát
     public int getCurrentPosition(){
-        return musicSrv.getPosn();
+        return mMusicSrv.getPosn();
     }
 
 
@@ -285,8 +239,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public Loader<Cursor> onCreateLoader(int i, @Nullable Bundle bundle) {
         String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
-
-
         String[] projection = {
                 MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.ARTIST,
@@ -307,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor musicCursor) {
-        if(musicCursor!=null && musicCursor.moveToFirst()){
+        if(musicCursor!=null && musicCursor.moveToFirst()) {
             //get columns
             int titleColumn = musicCursor.getColumnIndex
                     (android.provider.MediaStore.Audio.Media.TITLE);
@@ -326,10 +278,35 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-
-
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
 
+    }
+
+    @Override
+    public void updateSeekbar(int position) {
+        fragmentPlaySong.updateSeekbar(position);
+        fragmentListSong.updateSeekbar(position);
+    }
+
+    @Override
+    public void updateMaxSeekbar(int duration) {
+        fragmentPlaySong.updateMaxSeekbar(duration);
+        fragmentListSong.updateMaxSeekbar(duration);
+    }
+
+    @Override
+    public void updateTextNameSong(String s) {
+        fragmentPlaySong.setTextNameSong(s);
+        fragmentListSong.setTextNameSong(s);
+    }
+
+    @Override
+    public void updateTextTimePlay(String s) {
+        fragmentPlaySong.setTextTimePosn(s);
+    }
+
+    public void setImusic(){
+        mMusicSrv.setmIMusicRemote(this);
     }
 }

@@ -3,12 +3,8 @@ package com.example.ngocanhpro.media.services;
 import android.app.Service;
 import android.os.Handler;
 import android.os.IBinder;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
-import android.view.MenuItem;
-import android.view.View;
+
 import java.util.ArrayList;
 import android.content.ContentUris;
 import android.media.AudioManager;
@@ -17,13 +13,11 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.PowerManager;
 import android.util.Log;
-import java.util.Random;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.example.ngocanhpro.media.FragmentListSong;
 import com.example.ngocanhpro.media.IMusicRemote;
 import com.example.ngocanhpro.media.MainActivity;
 import com.example.ngocanhpro.media.R;
@@ -34,27 +28,25 @@ public class MusicService extends  Service implements
         MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener,
         MediaPlayer.OnCompletionListener {
     private int mInterval = 500; // khoảng thời gian cập nhật seek bar mili giây
-    private SeekBar mSeekBar1, mSeekBar2;
-    private MediaPlayer player; //media player
-    private ArrayList<Song> songs; // Danh sách bài hát
-    private int songPosn = 0; // vị trí bài hát được phát
-    private final IBinder musicBind = new MusicBinder();
+    private MediaPlayer mPlayer; //media mPlayer
+    private ArrayList<Song> mSongs; // Danh sách bài hát
+    private int mSongPosn = 0; // vị trí bài hát được phát
+    private final IBinder mMusicBind = new MusicBinder();
     private String songTitle=""; // Tên bài hát phát
     private static final int NOTIFY_ID=1;
-    private boolean mIsPlaySong = false; // Kiểm tra xem bài hát phát không
-    TextView tvTitleSong1, tvTitleSong2, tvTotalTime, tvTimeRun;
-    private boolean isPrepared = false;
+    private IMusicRemote mIMusicRemote;
+    private Handler myHandler = new Handler();
 
 
     @Override
     public IBinder onBind(Intent intent) {
-        return musicBind;
+        return mMusicBind;
     }
 
     @Override
     public boolean onUnbind(Intent intent){
-        player.stop();
-        player.release();
+        mPlayer.stop();
+        mPlayer.release();
         return false;
     }
 
@@ -62,87 +54,86 @@ public class MusicService extends  Service implements
         //create the service
         super.onCreate();
         //initialize position
-        songPosn=0;
-        //create player
-        player = new MediaPlayer();
+        mSongPosn =0;
+        //create mPlayer
+        mPlayer = new MediaPlayer();
         initMusicPlayer();
     }
 
-
     //Khởi tạo music layer
     public void initMusicPlayer(){
-        player.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
-        player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        player.setOnPreparedListener(this);
-        player.setOnCompletionListener(this);
-        player.setOnErrorListener(this);
+        mPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
+        mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mPlayer.setOnPreparedListener(this);
+        mPlayer.setOnCompletionListener(this);
+        mPlayer.setOnErrorListener(this);
     }
 
     //Lấy vị trí seekbar
     public int getPosn(){
-        return player.getCurrentPosition();
+        return mPlayer.getCurrentPosition();
     }
 
     //Lấy tổng thời gian phát
     public int getDur(){
-        return player.getDuration();
+        return mPlayer.getDuration();
     }
 
     //Kiểm tra xem bài hát đang phát hay ngừng
     public boolean isPng(){
-        return player.isPlaying();
+        return mPlayer.isPlaying();
     }
 
     //Dừng bài hát đang phát
     public void pausePlayer(){
-        player.pause();
+        mPlayer.pause();
     }
 
     //Tua bài hát bằng seek bar
     public void seek(int posn){
-        player.seekTo(posn);
+        mPlayer.seekTo(posn);
     }
 
     //Phát bài hát
     public void go(){
-        player.start();
-        mProgressRunner1.run();
+        mPlayer.start();
     }
 
     //Chuyển bái hát vừa phát hoặc bài hát xếp trước
     public void playPrev(){
-        songPosn--;
-        if(songPosn == 0) {
-            songPosn=songs.size()-1;
+        mSongPosn--;
+        if(mSongPosn == 0) {
+            mSongPosn = mSongs.size()-1;
         }
         playSong();
     }
 
     //Chuyển bài hát tiếp theo
     public void playNext(){
-        songPosn++;
-        if(songPosn == songs.size()) {
-            songPosn=0;
+        mSongPosn++;
+        if(mSongPosn == mSongs.size()) {
+            mSongPosn =0;
         }
         playSong();
     }
 
     public void playSong(){
-        mIsPlaySong = true;
-        player.reset();
+        mPlayer.reset();
         //get song
-        Song song = songs.get(songPosn);
+        Song song = mSongs.get(mSongPosn);
         songTitle=song.getTitle();
         long currSong = song.getId();
         Uri trackUri = ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, currSong);
         try{
-            player.setDataSource(getApplicationContext(), trackUri);
+            mPlayer.setDataSource(getApplicationContext(), trackUri);
         }
         catch(Exception e){
             Log.e("MUSIC SERVICE", "Error setting data source", e);
         }
-        player.prepareAsync();
+        mPlayer.prepareAsync();
+        Log.d("Phát bài hát"," playSong()");
 
+        mIMusicRemote.updateTextNameSong(songTitle);
 
     }
 
@@ -150,26 +141,24 @@ public class MusicService extends  Service implements
 
     //Đặt danh sách bài hát từ data cho Service
     public void setList(ArrayList<Song> theSongs){
-        songs=theSongs;
+        mSongs =theSongs;
     }
 
     //Đặt bài hát phát
     public void setSong(int songIndex){
-        songPosn=songIndex;
+        mSongPosn =songIndex;
     }
 
     //Lấy bài hát đang phát
     public Song getSong(){
-        return songs.get(songPosn);
+        return mSongs.get(mSongPosn);
     }
 
-
-
-    public class MusicBinder extends Binder {
-        public MusicService getService() {
-            return MusicService.this;
-        }
+    //Lấy tên bài hát đang phát
+    public String getSongTitle(){
+        return songTitle;
     }
+
 
     @Override
     public boolean onError(MediaPlayer mp, int what, int extra) {
@@ -206,14 +195,30 @@ public class MusicService extends  Service implements
         Notification not = builder.build();
         startForeground(NOTIFY_ID, not);
 
-        int duration = mp.getDuration();
-        mSeekBar1.setMax(duration); // cài đặt giá trị max cho seekbar
-        mSeekBar1.postDelayed(mProgressRunner1, mInterval);
-        mSeekBar2.setMax(duration);
-        mSeekBar2.postDelayed(mProgressRunner2, mInterval);
-        tvTitleSong1.setText(songTitle); // cập nhật lại tên bài hát trên text view name song khi bắt đầu phát
-        tvTitleSong2.setText(songTitle);
-        tvTotalTime.setText("" + convertToTimeFommat(player.getDuration()));// cập nhật tổng thời gian phát
+        //Cập nhật thời gian phát seekbar
+        mIMusicRemote.updateMaxSeekbar(getDur());
+        myHandler.postDelayed(UpdateSongTime,100);
+    }
+
+    private Runnable UpdateSongTime = new Runnable() {
+        public void run() {
+            if(mPlayer.isPlaying()) {
+                mIMusicRemote.updateSeekbar(getPosn());
+                mIMusicRemote.updateTextTimePlay(convertToTimeFommat(getPosn()));
+            }
+            myHandler.postDelayed(this, mInterval);
+        }
+    };
+
+    //Chuyển định dạng mili giây về phút:giây
+    public String convertToTimeFommat(int t) {
+        int phut = t/60000;
+        int giay = (t-phut*60000)/1000;
+        return phut+":"+giay;
+    }
+
+    public void setmIMusicRemote(IMusicRemote mIMusicRemote) {
+        this.mIMusicRemote = mIMusicRemote;
     }
 
     @Override
@@ -221,111 +226,10 @@ public class MusicService extends  Service implements
         stopForeground(true);
     }
 
-    //Cập nhật seek bar, thời gian phát bìa hát mỗi giây
-    private Runnable mProgressRunner1 = new Runnable() {
-        @Override
-        public void run() {
-            if (mSeekBar1 != null) {
-                mSeekBar1.setProgress(player.getCurrentPosition());
-
-                if (player.isPlaying()) {
-                    mSeekBar1.postDelayed(mProgressRunner1, mInterval);
-                }
-            }
-
+    public class MusicBinder extends Binder {
+        public MusicService getService() {
+            return MusicService.this;
         }
-    };
-
-    //Cập nhật seek bar, thời gian phát bìa hát mỗi giây
-    private Runnable mProgressRunner2 = new Runnable() {
-        @Override
-        public void run() {
-            if (player != null && player.isPlaying()) {
-                tvTimeRun.setText(""+convertToTimeFommat(player.getCurrentPosition()));
-            }
-            if (mSeekBar2 != null) {
-                mSeekBar2.setProgress(player.getCurrentPosition());
-
-                if (player.isPlaying()) {
-                    mSeekBar2.postDelayed(mProgressRunner2, mInterval);
-                }
-            }
-
-        }
-    };
-
-
-    /**
-     * Sets seekBar to control while playing music
-     * @param seekBar - Seek bar instance that's already on our UI thread
-     */
-    public void setUIControls1(SeekBar seekBar) {
-        mSeekBar1 = seekBar;
-        //  mCurrentPosition = currentPosition;
-        mSeekBar1.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    // Change current position of the song playback
-                    player.seekTo(progress);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
-    }
-    public void setUIControls2(SeekBar seekBar) {
-        mSeekBar2 = seekBar;
-        //  mCurrentPosition = currentPosition;
-        mSeekBar2.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    // Change current position of the song playback
-                    player.seekTo(progress);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
-    }
-
-    /* đặt text view tên bài hát
-
-     */
-    public void setTextViewTitleSong1(TextView tv) {
-        tvTitleSong1 = tv;
-    }
-    public void setTextViewTitleSong2(TextView tv) {
-        tvTitleSong2 = tv;
-    }
-
-    public void setTextTime(TextView tv1, TextView tv2) {
-        tvTimeRun = tv1;
-        tvTotalTime = tv2;
-    }
-
-    public boolean getIsPlaySong() {
-        return mIsPlaySong;
-    }
-
-    public String getSongTitle(){
-        return songTitle;
-    }
-
-    //Chuyển định dạng mili giây về phút:giây
-    public String convertToTimeFommat(int t) {
-        int phut = t/60000;
-        int giay = (t-phut*60000)/1000;
-        return phut+":"+giay;
     }
 
 }
