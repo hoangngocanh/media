@@ -101,18 +101,21 @@ public class MusicService extends  Service implements
 
     //Chuyển bái hát vừa phát hoặc bài hát xếp trước
     public void playPrev(){
-        mSongPosn--;
+
         if(mSongPosn == 0) {
             mSongPosn = mSongs.size()-1;
+        } else {
+            mSongPosn--;
         }
         playSong();
     }
 
     //Chuyển bài hát tiếp theo
     public void playNext(){
-        mSongPosn++;
-        if(mSongPosn == mSongs.size()) {
-            mSongPosn =0;
+        if(mSongPosn == mSongs.size() -1) {
+            mSongPosn = 0;
+        } else {
+            mSongPosn++;
         }
         playSong();
     }

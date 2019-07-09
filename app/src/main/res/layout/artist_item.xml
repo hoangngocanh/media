@@ -12,7 +12,7 @@
 
         <ImageView
             android:src="@drawable/play_music"
-            android:id="@+id/img_song"
+            android:id="@+id/imageView"
             android:layout_width="50dp"
             android:layout_height="50dp"
             android:layout_alignParentStart="true"

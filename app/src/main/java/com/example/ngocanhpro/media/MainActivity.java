@@ -1,10 +1,12 @@
 package com.example.ngocanhpro.media;
 
 import android.content.ComponentName;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
@@ -24,15 +26,15 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
 
 import com.example.ngocanhpro.media.enity.Song;
 import com.example.ngocanhpro.media.services.MusicService;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, IControlPlayMedia,  LoaderManager.LoaderCallbacks<Cursor>, IMusicRemote {
+    public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, IControlPlayMedia,  LoaderManager.LoaderCallbacks<Cursor>, IMusicRemote {
     private ArrayList<Song> mListSong = new ArrayList<>();
+    private ArrayList<Song> mList = new ArrayList<>();
     private MusicService mMusicSrv;
     private Intent mPlayIntent;
     public FragmentPlaySong fragmentPlaySong = new FragmentPlaySong();
@@ -44,7 +46,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
+        mList = mListSong;
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -62,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         ft.replace(R.id.container, fragmentListSong);
         ft.commit();
 //        getSongList();
+
         getSupportLoaderManager().initLoader(0, null, this);
         fragmentListSong.setListSong(mListSong);
 
@@ -76,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             //get service
             mMusicSrv = binder.getService();
             //pass list
-            mMusicSrv.setList(mListSong);
+            mMusicSrv.setList(mList);
             setImusic();
         }
         @Override
@@ -135,15 +138,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        if (id == R.id.nav_artists) {
+            fragmentListSong.sortByArist();
+        } else if (id == R.id.nav_albums) {
 
-        } else if (id == R.id.nav_slideshow) {
+        } else if (id == R.id.nav_songs) {
+            fragmentListSong.sortBySong();
+        } else if (id == R.id.nav_playlists) {
 
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
+        } else if (id == R.id.nav_snapdragon) {
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
@@ -188,8 +191,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mMusicSrv.playSong();
     }
 
-
     @Override
+    public void setListSong(ArrayList<Song> array) {
+        mMusicSrv.setList(array);
+    }
+
+
+                @Override
     //Dừng bài hát
     public void pauseMedia(){
             mMusicSrv.pausePlayer();
@@ -245,7 +253,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.DISPLAY_NAME,
-                MediaStore.Audio.Media.DURATION
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.ALBUM_ID
         };
 
         return new CursorLoader(
@@ -267,12 +276,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     (android.provider.MediaStore.Audio.Media._ID);
             int artistColumn = musicCursor.getColumnIndex
                     (android.provider.MediaStore.Audio.Media.ARTIST);
+            int idAlbum = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.ALBUM_ID);
+
+
             //add songs to list
             do {
                 long thisId = musicCursor.getLong(idColumn);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
-                mListSong.add(new Song(thisId, thisTitle, thisArtist));
+                long albumId = musicCursor.getLong(idAlbum);
+                mListSong.add(new Song(thisId, thisTitle, thisArtist, albumId));
             }
             while (musicCursor.moveToNext());
         }
@@ -309,4 +323,5 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public void setImusic(){
         mMusicSrv.setmIMusicRemote(this);
     }
+
 }
