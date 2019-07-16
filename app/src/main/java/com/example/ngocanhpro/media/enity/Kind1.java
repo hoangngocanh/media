@@ -1,14 +1,14 @@
 package com.example.ngocanhpro.media.enity;
 
-public class Kind {
+public class Kind1 {
     String name;
     int num;
     int imagePath;
 
-    public Kind() {
+    public Kind1() {
     }
 
-    public Kind(String name, int num) {
+    public Kind1(String name, int num) {
         this.name = name;
         this.num = num;
     }

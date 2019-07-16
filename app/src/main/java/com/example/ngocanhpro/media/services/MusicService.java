@@ -15,10 +15,8 @@ import android.os.PowerManager;
 import android.util.Log;
 import android.app.Notification;
 import android.app.PendingIntent;
-import android.widget.SeekBar;
-import android.widget.TextView;
 
-import com.example.ngocanhpro.media.IMusicRemote;
+import com.example.ngocanhpro.media.interf.IMusicRemote;
 import com.example.ngocanhpro.media.MainActivity;
 import com.example.ngocanhpro.media.R;
 import com.example.ngocanhpro.media.enity.Song;

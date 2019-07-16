@@ -1,4 +1,4 @@
-package com.example.ngocanhpro.media;
+package com.example.ngocanhpro.media.interf;
 
 public interface IMusicRemote {
 

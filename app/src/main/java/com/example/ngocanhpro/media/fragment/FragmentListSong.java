@@ -1,12 +1,10 @@
-package com.example.ngocanhpro.media;
+package com.example.ngocanhpro.media.fragment;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -18,8 +16,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.example.ngocanhpro.media.interf.IControlPlayMedia;
+import com.example.ngocanhpro.media.R;
+import com.example.ngocanhpro.media.adapter.SongAdapter;
 import com.example.ngocanhpro.media.enity.Song;
-import com.example.ngocanhpro.media.enity.Kind;
+import com.example.ngocanhpro.media.enity.Kind1;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -158,75 +159,4 @@ public class FragmentListSong extends Fragment  {
             }
         },getContext()));
     }
-
-    // tạo danh sách phát theo nghệ sĩ
-    public ArrayList<Kind> makeListArist(ArrayList<Song> array) {
-        ArrayList<Kind> arrayArists = new ArrayList<>();
-        arrayArists.add(new Kind(array.get(0).getArtist(),1));
-        int check = 1;
-        for (int i = 1; i < array.size(); i++) {
-            check =1;
-            for (int j = 0; j < arrayArists.size(); j++) {
-                if (array.get(i).getArtist().equals(arrayArists.get(j).getName())) {
-                    check = 0;
-                    arrayArists.get(j).setNum(arrayArists.get(j).getNum()+1);
-                }
-            }
-            if (check == 1) {
-                arrayArists.add(new Kind(array.get(i).getArtist(), 1));
-            }
-
-        }
-
-        for (int k = 0; k < arrayArists.size(); k++) {
-            Log.v("Arists "+arrayArists.get(k).getName(),""+arrayArists.get(k).getNum());
-        }
-        return arrayArists;
-    }
-
-    public void sortByArist(){
-        ArrayList<Kind> arrayArists = new ArrayList<Kind>();
-        arrayArists = makeListArist(mListSong);
-        mRecyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
-        mRecyclerView.setAdapter(new KindAdapter(arrayArists, new KindAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(Kind item) {
-
-                final ArrayList<Song> list = getListByKind(item.getName());
-                iControlPlayMedia.setListSong(list);
-                mRecyclerView.setLayoutManager(new GridLayoutManager(getContext(), 1));
-                mRecyclerView.setAdapter(new SongAdapter(list, new SongAdapter.OnItemClickListener() {
-                    @Override public void onItemClick(Song item) {
-                        Toast.makeText(getActivity(),"playing " + item.getTitle(),Toast.LENGTH_SHORT).show();
-                        iControlPlayMedia.openFragmentPlayMusic();
-                        iControlPlayMedia.playSong(list.indexOf(item));
-                    }
-                },getContext()));
-            }
-
-        }));
-    }
-
-    public ArrayList<Song> getListByKind(String kind) {
-        ArrayList<Song> array = new ArrayList<Song>();
-        for (int i = 0; i < mListSong.size(); i++) {
-            if(mListSong.get(i).getArtist().equals(kind)) {
-                array.add(mListSong.get(i));
-            }
-        }
-        return array;
-    }
-
-    public void sortBySong(){
-        iControlPlayMedia.setListSong(mListSong);
-        mRecyclerView.setLayoutManager(new GridLayoutManager(getContext(), 1));
-        mRecyclerView.setAdapter(new SongAdapter(mListSong, new SongAdapter.OnItemClickListener() {
-            @Override public void onItemClick(Song item) {
-                Toast.makeText(getActivity(),"playing " + item.getTitle(),Toast.LENGTH_SHORT).show();
-                iControlPlayMedia.openFragmentPlayMusic();
-                iControlPlayMedia.playSong(mListSong.indexOf(item));
-            }
-        },getContext()));
-    }
-
 }

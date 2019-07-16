@@ -1,12 +1,10 @@
 package com.example.ngocanhpro.media;
 
 import android.content.ComponentName;
-import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
@@ -28,17 +26,27 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.example.ngocanhpro.media.enity.Song;
+import com.example.ngocanhpro.media.fragment.FragmentListAlbum;
+import com.example.ngocanhpro.media.fragment.FragmentListArtist;
+import com.example.ngocanhpro.media.fragment.FragmentListSong;
+import com.example.ngocanhpro.media.fragment.FragmentPlaySong;
+import com.example.ngocanhpro.media.interf.IControlFragment;
+import com.example.ngocanhpro.media.interf.IControlPlayMedia;
+import com.example.ngocanhpro.media.interf.IMusicRemote;
 import com.example.ngocanhpro.media.services.MusicService;
 
 import java.util.ArrayList;
 
-    public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, IControlPlayMedia,  LoaderManager.LoaderCallbacks<Cursor>, IMusicRemote {
+    public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener,
+            IControlPlayMedia,  LoaderManager.LoaderCallbacks<Cursor>, IMusicRemote {
     private ArrayList<Song> mListSong = new ArrayList<>();
     private ArrayList<Song> mList = new ArrayList<>();
     private MusicService mMusicSrv;
     private Intent mPlayIntent;
     public FragmentPlaySong fragmentPlaySong = new FragmentPlaySong();
     public FragmentListSong fragmentListSong = new FragmentListSong();
+    public FragmentListArtist fragmentListArtist = new FragmentListArtist();
+    public FragmentListAlbum fragmentListAlbum = new FragmentListAlbum();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,8 +65,6 @@ import java.util.ArrayList;
         navigationView.setNavigationItemSelectedListener(this);
 
         //Hiển thị fragment
-
-        // Begin the transaction
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         // chèn fragment danh sách bài hát lên main activity
         ft.replace(R.id.container, fragmentListSong);
@@ -67,6 +73,7 @@ import java.util.ArrayList;
 
         getSupportLoaderManager().initLoader(0, null, this);
         fragmentListSong.setListSong(mListSong);
+        fragmentListArtist.setListSong(mListSong);
 
 
     }
@@ -139,13 +146,14 @@ import java.util.ArrayList;
         int id = item.getItemId();
 
         if (id == R.id.nav_artists) {
-            fragmentListSong.sortByArist();
+//            fragmentListSong.sortByArist();
+            openFragmentArtist();
         } else if (id == R.id.nav_albums) {
-
+            opentFragmetAlbum();
         } else if (id == R.id.nav_songs) {
-            fragmentListSong.sortBySong();
+            opentFragmentSong();
         } else if (id == R.id.nav_playlists) {
-
+            opentFragmentPlayList();
         } else if (id == R.id.nav_snapdragon) {
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -153,13 +161,17 @@ import java.util.ArrayList;
         return true;
     }
 
-    @Override
+
+
+        @Override
     public void onAttachFragment(Fragment fragment) {
         if (fragment instanceof FragmentListSong) {
             FragmentListSong fragmentListSong = (FragmentListSong) fragment;
             fragmentListSong.setOnHeadlineSelectedListener(this);
         } else if (fragment instanceof  FragmentPlaySong) {
             fragmentPlaySong.setOnHeadlineSelectedListener(this);
+        } else if (fragment instanceof  FragmentListArtist) {
+            fragmentListArtist.setOnHeadlineSelectedListener(this);
         }
     }
 
@@ -173,7 +185,6 @@ import java.util.ArrayList;
     //mở fragment playmusic (hiển thị cửa sổ  chơi nhạc)
     public void openFragmentPlayMusic(){
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-
         if (fragmentPlaySong.isAdded()) {
                 ft.show(fragmentPlaySong);
                 Log.d("fragment",": Added");
@@ -196,8 +207,7 @@ import java.util.ArrayList;
         mMusicSrv.setList(array);
     }
 
-
-                @Override
+    @Override
     //Dừng bài hát
     public void pauseMedia(){
             mMusicSrv.pausePlayer();
@@ -231,6 +241,11 @@ import java.util.ArrayList;
     }
 
     @Override
+    public Song getSong() {
+        return mMusicSrv.getSong();
+    }
+
+        @Override
     //Tua đến vị trí posn
     public void seek(int posn) {
         mMusicSrv.seek(posn);
@@ -324,4 +339,41 @@ import java.util.ArrayList;
         mMusicSrv.setmIMusicRemote(this);
     }
 
+    public void openFragmentArtist() {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        if (fragmentListArtist.isAdded()) {
+            ft.show(fragmentListArtist);
+
+        } else {
+            ft.replace(R.id.container, fragmentListArtist, "fragmentArtist").addToBackStack(null);
+        }
+        ft.commit();
+    }
+
+
+    public void opentFragmetAlbum() {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        if (fragmentListAlbum.isAdded()) {
+            ft.show(fragmentListAlbum);
+
+        } else {
+            ft.replace(R.id.container, fragmentListAlbum, "fragmentAlbum").addToBackStack(null);
+        }
+        ft.commit();
+    }
+
+    public void opentFragmentPlayList() {
+
+    }
+
+    private void opentFragmentSong() {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        if (fragmentPlaySong.isAdded()) {
+            ft.show(fragmentPlaySong);
+
+        } else {
+            ft.replace(R.id.container, fragmentPlaySong, "fragmentSong").addToBackStack(null);
+        }
+        ft.commit();
+    }
 }

@@ -1,4 +1,4 @@
-package com.example.ngocanhpro.media;
+package com.example.ngocanhpro.media.adapter;
 
 import android.content.ContentUris;
 import android.content.Context;
@@ -11,19 +11,21 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.ngocanhpro.media.R;
 import com.example.ngocanhpro.media.enity.Song;
+import com.example.ngocanhpro.media.fragment.FragmentListSong;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import java.util.ArrayList;
 
+import static android.os.Build.ID;
+
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> {
     private ArrayList<Song> mSongs = new ArrayList<>();
     private ImageLoader mImageLoader;
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
+    public FragmentListSong fragmentListSong = new FragmentListSong();
 
     public interface OnItemClickListener {
         void onItemClick(Song item);
