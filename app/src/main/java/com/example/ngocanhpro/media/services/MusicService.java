@@ -27,7 +27,7 @@ public class MusicService extends  Service implements
         MediaPlayer.OnCompletionListener {
     private int mInterval = 500; // khoảng thời gian cập nhật seek bar mili giây
     private MediaPlayer mPlayer; //media mPlayer
-    private ArrayList<Song> mSongs; // Danh sách bài hát
+    private ArrayList<Song> mSongs = new ArrayList<>(); // Danh sách bài hát
     private int mSongPosn = 0; // vị trí bài hát được phát
     private final IBinder mMusicBind = new MusicBinder();
     private String songTitle=""; // Tên bài hát phát
@@ -85,6 +85,8 @@ public class MusicService extends  Service implements
     //Dừng bài hát đang phát
     public void pausePlayer(){
         mPlayer.pause();
+        //Sửa lại nút hiển thị giao diện play khi dưng bài hát
+        mIMusicRemote.updateUIbtnPlay();
     }
 
     //Tua bài hát bằng seek bar
@@ -95,6 +97,8 @@ public class MusicService extends  Service implements
     //Phát bài hát
     public void go(){
         mPlayer.start();
+        //Sửa lại nút hiển thị giao diện pause khi đang chơi bài hát
+        mIMusicRemote.updateUIbtnPause();
     }
 
     //Chuyển bái hát vừa phát hoặc bài hát xếp trước
@@ -136,6 +140,24 @@ public class MusicService extends  Service implements
 
         mIMusicRemote.updateTextNameSong(songTitle);
 
+        //Sửa lại nút hiển thị giao diện pause khi phát bài hát
+        mIMusicRemote.updateUIbtnPause();
+
+    }
+
+    public void playSong(long id){
+        mPlayer.reset();
+        Uri trackUri = ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+        try{
+            mPlayer.setDataSource(getApplicationContext(), trackUri);
+        }
+        catch(Exception e){
+            Log.e("MUSIC SERVICE", "Error setting data source", e);
+        }
+        mPlayer.prepareAsync();
+        Log.d("Phát bài hát"," playSong()");
+
+
     }
 
 
@@ -172,6 +194,8 @@ public class MusicService extends  Service implements
     public void onCompletion(MediaPlayer mp) {
         Log.v("tag","bài hát tiếp theo ");
         mp.reset();
+        //Sửa lại nút hiển thị giao diện play khi dưng bài hát
+        mIMusicRemote.updateUIbtnPlay();
         playNext();
     }
 
@@ -210,6 +234,10 @@ public class MusicService extends  Service implements
             myHandler.postDelayed(this, mInterval);
         }
     };
+
+    public boolean isPlayer() {
+        return (mPlayer != null);
+    }
 
     //Chuyển định dạng mili giây về phút:giây
     public String convertToTimeFommat(int t) {

@@ -28,6 +28,7 @@ public class FragmentPlaySong extends Fragment{
     SeekBar seekBar;
     TextView tvNameOfSong, tvTimeRun, tvTotalTime;
     ImageView imgSong;
+    Button btnPlay;
     private ImageLoader mImageLoader;
 
 
@@ -59,7 +60,7 @@ public class FragmentPlaySong extends Fragment{
             }
         });
 
-        final Button btnPlay = (Button) v.findViewById(R.id.play);
+        btnPlay = (Button) v.findViewById(R.id.play);
         btnPlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
@@ -174,13 +175,24 @@ public class FragmentPlaySong extends Fragment{
         }
     }
     public void setTextTimePosn(String posn){
-        tvTimeRun.setText(posn);
+        if(tvTimeRun != null) {
+            tvTimeRun.setText(posn);
+        }
     }
 
     public String convertToTimeFommat(int t) {
         int phut = t/60000;
         int giay = (t-phut*60000)/1000;
         return phut+":"+giay;
+    }
+
+    public void setBtnPlay() {
+        if (btnPlay != null)
+            btnPlay.setBackgroundResource(R.drawable.ic_play);
+    }
+    public void setBtnPause() {
+        if (btnPlay != null)
+            btnPlay.setBackgroundResource(R.drawable.ic_pause);
     }
 
 

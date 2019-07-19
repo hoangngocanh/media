@@ -4,9 +4,13 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +22,8 @@ import com.example.ngocanhpro.media.R;
 import com.example.ngocanhpro.media.enity.Album;
 import com.example.ngocanhpro.media.enity.Artist;
 import com.example.ngocanhpro.media.enity.Song;
+import com.example.ngocanhpro.media.fragment.FragmentSongs;
+import com.example.ngocanhpro.media.interf.IControlPlayMedia;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
@@ -30,14 +36,16 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.MyViewHold
     ArrayList<Integer> counter = new ArrayList<Integer>(); // Kiểm soát onclick mở đóng tab artist
     Context context;
     private ArrayList<ArrayList> mArrayList = new ArrayList<>();
+    public FragmentSongs fragmentSongs = new FragmentSongs();
+    IControlPlayMedia iControlPlayMedia;
 
 
-
-    public ArtistAdapter(ArrayList<Artist> arrayList, Context context) {
+    public ArtistAdapter(ArrayList<Artist> arrayList, Context context,IControlPlayMedia callback) {
         this.mArtists = arrayList;
         this.context = context;
         mImageLoader = ImageLoader.getInstance();
         mImageLoader.init(ImageLoaderConfiguration.createDefault(context));
+        this.iControlPlayMedia = callback;
 
         for (int i = 0; i < mArtists.size(); i++) {
             counter.add(0);
@@ -88,6 +96,9 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.MyViewHold
             new SubArtistAdapter.OnItemClickListener() {
                 @Override
                 public void onItemClick(Album item) {
+                    Log.v("Đã chọn: " + item.getNameAlbum(), ">>>>>>>>>>>");
+                    iControlPlayMedia.openFragmentSongs();
+                    iControlPlayMedia.setId(item.getId());
 
                 }
         });

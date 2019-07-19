@@ -64,7 +64,6 @@
                 android:layout_below="@+id/linearLayoutHolder"
                 android:background="#f6f6f6"
                 android:visibility="gone">
-
             </android.support.v7.widget.RecyclerView>
         </RelativeLayout>
 

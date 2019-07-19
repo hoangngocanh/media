@@ -28,7 +28,6 @@ import java.util.ArrayList;
 public class FragmentListArtist extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
     IControlPlayMedia iControlPlayMedia;
     private ArrayList<Artist> mListArtist = new ArrayList<>();
-    private ArrayList<Song> mListSong = new ArrayList<>();
     private RecyclerView mRecyclerView;
     ArrayList<Album> mListAlbum = new ArrayList<>();
     public void setOnHeadlineSelectedListener(IControlPlayMedia control) {
@@ -107,6 +106,7 @@ public class FragmentListArtist extends Fragment implements LoaderManager.Loader
             int numSongkCol = musicCursor.getColumnIndex
                     (MediaStore.Audio.AlbumColumns.NUMBER_OF_SONGS);
 
+            mListAlbum.clear();
             //add albums to list
             do {
                 long id = musicCursor.getLong(idCol);
@@ -130,7 +130,8 @@ public class FragmentListArtist extends Fragment implements LoaderManager.Loader
             int numAlbumCol = musicCursor.getColumnIndex
                     (MediaStore.Audio.ArtistColumns.NUMBER_OF_ALBUMS);
 
-            //add songs to list
+            mListArtist.clear();
+            //add artist to list
             do {
                 long id = musicCursor.getLong(idCol);
                 String name = musicCursor.getString(nameCol);
@@ -151,7 +152,7 @@ public class FragmentListArtist extends Fragment implements LoaderManager.Loader
             while (musicCursor.moveToNext());
 
 //            mRecyclerView.setAdapter(new ArtistAdapter(mListArtist,getContext()));
-            mRecyclerView.setAdapter(new ArtistAdapter(mListArtist,getContext()));
+            mRecyclerView.setAdapter(new ArtistAdapter(mListArtist,getContext(), (IControlPlayMedia) getActivity()));
 
         }
 
@@ -165,9 +166,6 @@ public class FragmentListArtist extends Fragment implements LoaderManager.Loader
 
     }
 
-    public void setListSong(ArrayList<Song> Songs) {
-        mListSong = Songs;
-    }
 
     public ArrayList<Album> fillSongByArtist (String artist){
         ArrayList<Album> array = new ArrayList<>();

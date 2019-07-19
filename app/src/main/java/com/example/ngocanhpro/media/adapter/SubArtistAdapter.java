@@ -83,15 +83,16 @@ public class SubArtistAdapter extends RecyclerView.Adapter<SubArtistAdapter.View
 
         // Set hình ảnh cho từng albums
         final Uri ART_CONTENT_URI = Uri.parse("content://media/external/audio/albumart");
-            Uri albumArtUri = ContentUris.withAppendedId(ART_CONTENT_URI, mAlbumList.get(position).getId());
-            mImageLoader = ImageLoader.getInstance();
-            mImageLoader.loadImage(String.valueOf(albumArtUri), new SimpleImageLoadingListener() {
-                @Override
-                public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
-                    super.onLoadingComplete(imageUri, view, loadedImage);
-                    holder.imgAlbum.setImageBitmap(loadedImage);
-                }
-            });
+        Uri albumArtUri = ContentUris.withAppendedId(ART_CONTENT_URI, mAlbumList.get(position).getId());
+        mImageLoader = ImageLoader.getInstance();
+        mImageLoader.loadImage(String.valueOf(albumArtUri), new SimpleImageLoadingListener() {
+            @Override
+            public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                super.onLoadingComplete(imageUri, view, loadedImage);
+                holder.imgAlbum.setImageBitmap(loadedImage);
+            }
+        });
+
         holder.bind(mAlbumList.get(position), listener);
 
     }

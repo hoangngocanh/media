@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+        <item
+            android:title="Add to playlist" />
+        <item
+            android:id="@+id/nav_current_playlist"
+            android:title="Current playlist" />
+        <item
+            android:id="@+id/nav_new"
+            android:title="New" />
+        <item
+            android:id="@+id/nav_new1"
+            android:title="New play list 1" />
+
+</menu>

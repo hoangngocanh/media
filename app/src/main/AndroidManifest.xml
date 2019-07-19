@@ -20,7 +20,7 @@
         android:theme="@style/AppTheme">
         <service android:name="com.example.ngocanhpro.media.services.MusicService" />
         <activity
-            android:name=".MainActivity"
+            android:name=".MainActivity1"
             android:label=""
             android:theme="@style/AppTheme.NoActionBar">
 

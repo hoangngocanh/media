@@ -7,15 +7,9 @@ import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.Fragment;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -30,7 +24,7 @@ import com.example.ngocanhpro.media.fragment.FragmentListAlbum;
 import com.example.ngocanhpro.media.fragment.FragmentListArtist;
 import com.example.ngocanhpro.media.fragment.FragmentListSong;
 import com.example.ngocanhpro.media.fragment.FragmentPlaySong;
-import com.example.ngocanhpro.media.interf.IControlFragment;
+import com.example.ngocanhpro.media.fragment.FragmentSongs;
 import com.example.ngocanhpro.media.interf.IControlPlayMedia;
 import com.example.ngocanhpro.media.interf.IMusicRemote;
 import com.example.ngocanhpro.media.services.MusicService;
@@ -38,8 +32,7 @@ import com.example.ngocanhpro.media.services.MusicService;
 import java.util.ArrayList;
 
     public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener,
-            IControlPlayMedia,  LoaderManager.LoaderCallbacks<Cursor>, IMusicRemote {
-    private ArrayList<Song> mListSong = new ArrayList<>();
+            IControlPlayMedia, IMusicRemote {
     private ArrayList<Song> mList = new ArrayList<>();
     private MusicService mMusicSrv;
     private Intent mPlayIntent;
@@ -47,6 +40,8 @@ import java.util.ArrayList;
     public FragmentListSong fragmentListSong = new FragmentListSong();
     public FragmentListArtist fragmentListArtist = new FragmentListArtist();
     public FragmentListAlbum fragmentListAlbum = new FragmentListAlbum();
+    public FragmentSongs fragmentSongs = new FragmentSongs();
+    private boolean mMusicBound=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +49,6 @@ import java.util.ArrayList;
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        mList = mListSong;
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -69,11 +63,7 @@ import java.util.ArrayList;
         // chèn fragment danh sách bài hát lên main activity
         ft.replace(R.id.container, fragmentListSong);
         ft.commit();
-//        getSongList();
 
-        getSupportLoaderManager().initLoader(0, null, this);
-        fragmentListSong.setListSong(mListSong);
-        fragmentListArtist.setListSong(mListSong);
 
 
     }
@@ -87,11 +77,15 @@ import java.util.ArrayList;
             mMusicSrv = binder.getService();
             //pass list
             mMusicSrv.setList(mList);
+            mMusicBound = true;
             setImusic();
+
+
         }
         @Override
         public void onServiceDisconnected(ComponentName name) {
-
+            mMusicBound = false;
+            fragmentListSong.setGoneCardMusic();
         }
     };
 
@@ -104,9 +98,8 @@ import java.util.ArrayList;
             startService(mPlayIntent);
 
         }
+
     }
-
-
 
     @Override
     public void onBackPressed() {
@@ -151,7 +144,7 @@ import java.util.ArrayList;
         } else if (id == R.id.nav_albums) {
             opentFragmetAlbum();
         } else if (id == R.id.nav_songs) {
-            opentFragmentSong();
+            opentFragmentListSong();
         } else if (id == R.id.nav_playlists) {
             opentFragmentPlayList();
         } else if (id == R.id.nav_snapdragon) {
@@ -163,7 +156,7 @@ import java.util.ArrayList;
 
 
 
-        @Override
+    @Override
     public void onAttachFragment(Fragment fragment) {
         if (fragment instanceof FragmentListSong) {
             FragmentListSong fragmentListSong = (FragmentListSong) fragment;
@@ -172,6 +165,10 @@ import java.util.ArrayList;
             fragmentPlaySong.setOnHeadlineSelectedListener(this);
         } else if (fragment instanceof  FragmentListArtist) {
             fragmentListArtist.setOnHeadlineSelectedListener(this);
+        } else if (fragment instanceof FragmentSongs) {
+            fragmentSongs.setOnHeadlineSelectedListener(this);
+        } else if (fragment instanceof FragmentListAlbum) {
+            fragmentListAlbum.setOnHeadlineSelectedListener(this);
         }
     }
 
@@ -195,16 +192,36 @@ import java.util.ArrayList;
         }
         ft.commit();
     }
+
+    @Override
+    public void openFragmentSongs() {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        if (fragmentSongs.isAdded()) {
+            ft.show(fragmentSongs);
+
+        } else {
+            ft.replace(R.id.container, fragmentSongs, "fragmentSong").addToBackStack(null);
+        }
+        ft.commit();
+    }
+
     @Override
     //phát bài hát được chỉ định vị trí pos
     public void playSong(int pos){
         mMusicSrv.setSong(pos);
         mMusicSrv.playSong();
+        fragmentListSong.setVisibleCardMusic();
+    }
+
+    @Override
+    public void playSongById(long id) {
+        mMusicSrv.playSong(id);
     }
 
     @Override
     public void setListSong(ArrayList<Song> array) {
-        mMusicSrv.setList(array);
+        if(mMusicSrv != null)
+            mMusicSrv.setList(array);
     }
 
     @Override
@@ -212,7 +229,13 @@ import java.util.ArrayList;
     public void pauseMedia(){
             mMusicSrv.pausePlayer();
     }
+
     @Override
+    public boolean isMediaInit() {
+        return mMusicBound;
+    }
+
+        @Override
     //Phát tiếp bài hát
     public void playMedia() {
         mMusicSrv.go();
@@ -258,60 +281,6 @@ import java.util.ArrayList;
     }
 
 
-    @NonNull
-    @Override
-    public Loader<Cursor> onCreateLoader(int i, @Nullable Bundle bundle) {
-        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
-        String[] projection = {
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.ARTIST,
-                MediaStore.Audio.Media.TITLE,
-                MediaStore.Audio.Media.DATA,
-                MediaStore.Audio.Media.DISPLAY_NAME,
-                MediaStore.Audio.Media.DURATION,
-                MediaStore.Audio.Media.ALBUM_ID
-        };
-
-        return new CursorLoader(
-                this,
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                selection,
-                null,
-                null);
-    }
-
-    @Override
-    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor musicCursor) {
-        if(musicCursor!=null && musicCursor.moveToFirst()) {
-            //get columns
-            int titleColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.TITLE);
-            int idColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media._ID);
-            int artistColumn = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.ARTIST);
-            int idAlbum = musicCursor.getColumnIndex
-                    (android.provider.MediaStore.Audio.Media.ALBUM_ID);
-
-
-            //add songs to list
-            do {
-                long thisId = musicCursor.getLong(idColumn);
-                String thisTitle = musicCursor.getString(titleColumn);
-                String thisArtist = musicCursor.getString(artistColumn);
-                long albumId = musicCursor.getLong(idAlbum);
-                mListSong.add(new Song(thisId, thisTitle, thisArtist, albumId));
-            }
-            while (musicCursor.moveToNext());
-        }
-    }
-
-    @Override
-    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-
-    }
-
     @Override
     public void updateSeekbar(int position) {
         fragmentPlaySong.updateSeekbar(position);
@@ -335,7 +304,24 @@ import java.util.ArrayList;
         fragmentPlaySong.setTextTimePosn(s);
     }
 
-    public void setImusic(){
+    @Override
+    public void updateUIbtnPause() {
+        fragmentListSong.setBtnPause();
+        fragmentPlaySong.setBtnPause();
+    }
+
+    @Override
+    public void updateUIbtnPlay() {
+        fragmentListSong.setBtnPlay();
+        fragmentPlaySong.setBtnPlay();
+    }
+
+    @Override
+    public void setId(long id) {
+        fragmentSongs.setKeyWord(id);
+    }
+
+        public void setImusic(){
         mMusicSrv.setmIMusicRemote(this);
     }
 
@@ -363,17 +349,23 @@ import java.util.ArrayList;
     }
 
     public void opentFragmentPlayList() {
+        AppCompatActivity activity = (AppCompatActivity) this;
+
+        activity.getSupportFragmentManager().beginTransaction().replace(R.id.container, fragmentSongs).addToBackStack(null).commit();
+        fragmentSongs.setKeyWord((4));
 
     }
 
-    private void opentFragmentSong() {
+    private void opentFragmentListSong() {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        if (fragmentPlaySong.isAdded()) {
-            ft.show(fragmentPlaySong);
+        if (fragmentListSong.isAdded()) {
+            ft.show(fragmentListSong);
 
         } else {
-            ft.replace(R.id.container, fragmentPlaySong, "fragmentSong").addToBackStack(null);
+            ft.replace(R.id.container, fragmentListSong, "fragmentSong").addToBackStack(null);
         }
         ft.commit();
     }
+
+
 }

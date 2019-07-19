@@ -29,6 +29,7 @@ public class FragmentListAlbum extends Fragment implements LoaderManager.LoaderC
     IControlPlayMedia iControlPlayMedia;
     private ArrayList<Album> mListAlbum = new ArrayList<>();
     private RecyclerView mRecyclerView;
+
     public void setOnHeadlineSelectedListener(IControlPlayMedia control) {
         this.iControlPlayMedia = control;
     }
@@ -83,7 +84,8 @@ public class FragmentListAlbum extends Fragment implements LoaderManager.LoaderC
                     (MediaStore.Audio.AlbumColumns.NUMBER_OF_SONGS);
 
 
-            //add songs to list
+            mListAlbum.clear();
+            //add albums to list
             do {
                 long id = musicCursor.getLong(idCol);
                 String nameAlbum = musicCursor.getString(albumCol);
@@ -97,7 +99,8 @@ public class FragmentListAlbum extends Fragment implements LoaderManager.LoaderC
 
         mRecyclerView.setAdapter(new AlbumAdapter(mListAlbum, new AlbumAdapter.OnItemClickListener() {
             @Override public void onItemClick(Album item) {
-
+                iControlPlayMedia.openFragmentSongs();
+                iControlPlayMedia.setId(item.getId());
             }
         },getContext()));
 

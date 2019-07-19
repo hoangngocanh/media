@@ -1,6 +1,9 @@
 package com.example.ngocanhpro.media.fragment;
 
+import android.content.ContentUris;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -9,7 +12,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -17,6 +19,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,18 +30,23 @@ import com.example.ngocanhpro.media.R;
 import com.example.ngocanhpro.media.adapter.SongAdapter;
 import com.example.ngocanhpro.media.enity.Song;
 import com.example.ngocanhpro.media.enity.Kind1;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class FragmentListSong extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>  {
+public class FragmentSongs extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>  {
     private RecyclerView mRecyclerView;
     private ArrayList<Song> mListSong = new ArrayList<>();
     IControlPlayMedia iControlPlayMedia;
-    TextView tvNameOfSong;
+    TextView tvNameOfSong , tvNameAlbum, tvInforAlbum;
     SeekBar seekBar;
-    Button btnPlayMusic, btnShuffle;
-    CardView cardMusic;
+    Button btnPlayMusic;
+    ImageView imgAlbum;
+    long keywordAlbum;
+    private ImageLoader mImageLoader;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -48,25 +56,28 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
 
 
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable final ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View v = inflater.inflate(R.layout.fragment_list_song, container, false) ;
+        View v = inflater.inflate(R.layout.fragment_songs, container, false) ;
         LoaderManager loaderManager = getLoaderManager();
         loaderManager.initLoader(0, null, this);
         btnPlayMusic = (Button) v.findViewById(R.id.play_icon);
-        btnShuffle = (Button) v.findViewById(R.id.btn_shuffle);
         seekBar = (SeekBar) v.findViewById(R.id.seek_song);
         tvNameOfSong = (TextView) v.findViewById(R.id.nameSong);
+        tvNameAlbum = (TextView) v.findViewById(R.id.album_name);
+        tvInforAlbum = (TextView) v.findViewById(R.id.album_infor);
+        imgAlbum = (ImageView) v.findViewById(R.id.img_album);
 
-        cardMusic = (CardView) v.findViewById(R.id.card_music);
-
-        mRecyclerView = (RecyclerView) v.findViewById(R.id.song_list);
+        mRecyclerView = (RecyclerView) v.findViewById(R.id.songs);
         mRecyclerView.setLayoutManager(new GridLayoutManager(getContext(), 1));
         mRecyclerView.setAdapter(new SongAdapter(mListSong, new SongAdapter.OnItemClickListener() {
             @Override public void onItemClick(Song item) {
-                Toast.makeText(getActivity(),"playing " + item.getTitle(),Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(),"playing " + item.getTitle(),Toast.LENGTH_SHORT+mListSong.indexOf(item)).show();
+                iControlPlayMedia.setListSong(mListSong);
+                Log.v("::"+mListSong.size(),">>>"+mListSong.indexOf(item));
                 iControlPlayMedia.openFragmentPlayMusic();
                 iControlPlayMedia.playSong(mListSong.indexOf(item));
             }
         },getContext()));
+
 
 
         tvNameOfSong.setOnClickListener(new View.OnClickListener() {
@@ -74,7 +85,6 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
             @Override
             public void onClick(View v) {
                 iControlPlayMedia.openFragmentPlayMusic();
-                setVisibleCardMusic();
             }
 
         });
@@ -83,26 +93,29 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
         btnPlayMusic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-            if (iControlPlayMedia.isPlaying()) {
-                iControlPlayMedia.pauseMedia();
-                btnPlayMusic.setBackgroundResource(R.drawable.ic_play1);
-            } else {
-                btnPlayMusic.setBackgroundResource(R.drawable.ic_pause1);
-                iControlPlayMedia.playMedia();
-            }
+                if (iControlPlayMedia.isPlaying()) {
+                    iControlPlayMedia.pauseMedia();
+                    btnPlayMusic.setBackgroundResource(R.drawable.ic_play1);
+                } else {
+                    btnPlayMusic.setBackgroundResource(R.drawable.ic_pause1);
+                    iControlPlayMedia.playMedia();
+                }
             }
         });
 
-        // Đảo danh sách phát
-        btnShuffle.setOnClickListener(new View.OnClickListener() {
+        mImageLoader = ImageLoader.getInstance();
+        mImageLoader.init(ImageLoaderConfiguration.createDefault(getContext()));
+        final Uri ART_CONTENT_URI = android.net.Uri.parse("content://media/external/audio/albumart");
+        Uri albumArtUri = ContentUris.withAppendedId(ART_CONTENT_URI, keywordAlbum);
+        mImageLoader = ImageLoader.getInstance();
+        mImageLoader.loadImage(String.valueOf(albumArtUri),new SimpleImageLoadingListener(){
             @Override
-            public void onClick(View arg0) {
-                shuffleSongs(mListSong);
+            public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                super.onLoadingComplete(imageUri, view, loadedImage);
+                imgAlbum.setImageBitmap(loadedImage);
             }
         });
 
-
-        iControlPlayMedia.setListSong(mListSong);
 
         return v;
 
@@ -111,10 +124,6 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
     @Override
     public void onDestroy() {
         super.onDestroy();
-    }
-
-    public void setListSong(ArrayList<Song> songs) {
-         mListSong = songs;
     }
 
     public void setOnHeadlineSelectedListener(IControlPlayMedia callback) {
@@ -157,19 +166,6 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
         }
     }
 
-    //trộn danh sách phát ngẫu nhiên
-    public void shuffleSongs(ArrayList<Song> array) {
-        Collections.shuffle(array);
-        mRecyclerView.setLayoutManager(new GridLayoutManager(getContext(), 1));
-        mRecyclerView.setAdapter(new SongAdapter(mListSong, new SongAdapter.OnItemClickListener() {
-            @Override public void onItemClick(Song item) {
-                Toast.makeText(getActivity(),"playing " + item.getTitle()+mListSong.indexOf(item),Toast.LENGTH_SHORT).show();
-                iControlPlayMedia.openFragmentPlayMusic();
-                iControlPlayMedia.playSong(mListSong.indexOf(item));
-            }
-        },getContext()));
-    }
-
     @Override
     public Loader<Cursor> onCreateLoader(int i, @Nullable Bundle bundle) {
         String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
@@ -179,7 +175,7 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.DISPLAY_NAME,
-                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.ALBUM,
                 MediaStore.Audio.Media.ALBUM_ID
         };
 
@@ -206,6 +202,8 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
                     (android.provider.MediaStore.Audio.Media.ARTIST);
             int idAlbum = musicCursor.getColumnIndex
                     (android.provider.MediaStore.Audio.Media.ALBUM_ID);
+            int nameAlbumColumn = musicCursor.getColumnIndex
+                    (android.provider.MediaStore.Audio.Media.ALBUM);
 
             //Xoá dữ liệu tránh add thêm bài hát đã trungf lặp
             mListSong.clear();
@@ -214,8 +212,13 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
                 long thisId = musicCursor.getLong(idColumn);
                 String thisTitle = musicCursor.getString(titleColumn);
                 String thisArtist = musicCursor.getString(artistColumn);
+                String nameAlbum = musicCursor.getString(nameAlbumColumn);
                 long albumId = musicCursor.getLong(idAlbum);
-                mListSong.add(new Song(thisId, thisTitle, thisArtist, albumId));
+                if (albumId == keywordAlbum) {
+                    mListSong.add(new Song(thisId, thisTitle, thisArtist, albumId));
+                    tvNameAlbum.setText(nameAlbum);
+                    tvInforAlbum.setText(thisArtist);
+                }
             }
             while (musicCursor.moveToNext());
         }
@@ -227,19 +230,17 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
 
     }
 
+    public void setKeyWord (long id) {
+        keywordAlbum = id;
+    }
+
     public void setBtnPlay() {
         if (btnPlayMusic != null)
-        btnPlayMusic.setBackgroundResource(R.drawable.ic_play1);
+            btnPlayMusic.setBackgroundResource(R.drawable.ic_play1);
     }
     public void setBtnPause() {
         if (btnPlayMusic != null)
-        btnPlayMusic.setBackgroundResource(R.drawable.ic_pause1);
+            btnPlayMusic.setBackgroundResource(R.drawable.ic_pause1);
 
-    }
-    public void setVisibleCardMusic() {
-        cardMusic.setVisibility(View.VISIBLE);
-    }
-    public void setGoneCardMusic() {
-        cardMusic.setVisibility(View.GONE);
     }
 }
