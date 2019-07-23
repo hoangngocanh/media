@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
     <!-- This is needed for isWiredHeadsetOn() to work in some cases. (bug?) -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Playlist shortcuts -->
@@ -20,7 +21,7 @@
         android:theme="@style/AppTheme">
         <service android:name="com.example.ngocanhpro.media.services.MusicService" />
         <activity
-            android:name=".MainActivity1"
+            android:name=".MainActivity"
             android:label=""
             android:theme="@style/AppTheme.NoActionBar">
 

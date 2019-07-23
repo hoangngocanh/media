@@ -1,10 +1,13 @@
 package com.example.ngocanhpro.media;
 
 import android.content.ComponentName;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.FragmentTransaction;
@@ -18,6 +21,12 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.example.ngocanhpro.media.enity.Song;
 import com.example.ngocanhpro.media.fragment.FragmentListAlbum;
@@ -28,7 +37,13 @@ import com.example.ngocanhpro.media.fragment.FragmentSongs;
 import com.example.ngocanhpro.media.interf.IControlPlayMedia;
 import com.example.ngocanhpro.media.interf.IMusicRemote;
 import com.example.ngocanhpro.media.services.MusicService;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.assist.FailReason;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
+import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
     public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener,
@@ -36,17 +51,40 @@ import java.util.ArrayList;
     private ArrayList<Song> mList = new ArrayList<>();
     private MusicService mMusicSrv;
     private Intent mPlayIntent;
-    public FragmentPlaySong fragmentPlaySong = new FragmentPlaySong();
+
     public FragmentListSong fragmentListSong = new FragmentListSong();
     public FragmentListArtist fragmentListArtist = new FragmentListArtist();
     public FragmentListAlbum fragmentListAlbum = new FragmentListAlbum();
     public FragmentSongs fragmentSongs = new FragmentSongs();
     private boolean mMusicBound=false;
+    ImageButton btnPlay, btnPlayMain, btnPrev, btnNext;
+    TextView tvNameSong, tvNameArtist, tvTimePlay, tvTimeMax;
+    SeekBar seekBar;
+    ImageView imgSmallCover, imgCoverSong;
+    RelativeLayout panelUp;
+    private  ImageLoader mImageLoader;
+    private SlidingUpPanelLayout mLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_panel);
+        imgSmallCover = (ImageView) findViewById(R.id.img_song_small_cover);
+        imgCoverSong = (ImageView) findViewById(R.id.img_song_cover);
+        panelUp = (RelativeLayout) findViewById(R.id.panel_up);
+        panelUp.setVisibility(View.GONE);
+
+        btnPlay = (ImageButton) findViewById(R.id.play_button);
+        btnPlayMain = (ImageButton) findViewById(R.id.play_button_main);
+        btnPrev = (ImageButton) findViewById(R.id.btn_prev);
+        btnNext = (ImageButton) findViewById(R.id.btn_next);
+        tvNameArtist = (TextView) findViewById(R.id.songs_artist_name);
+        tvNameSong = (TextView) findViewById(R.id.songs_title) ;
+        seekBar = (SeekBar) findViewById(R.id.seek_bar);
+        tvTimeMax = (TextView) findViewById(R.id.end_time);
+        tvTimePlay = (TextView) findViewById(R.id.start_time);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -64,9 +102,73 @@ import java.util.ArrayList;
         ft.replace(R.id.container, fragmentListSong);
         ft.commit();
 
+        btnPlay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                if (mMusicSrv.isPng()) {
+                    mMusicSrv.pausePlayer();
+                    btnPlay.setImageResource(R.drawable.round_play_arrow_black_48dp);
+                } else {
+                    btnPlay.setImageResource(R.drawable.round_pause_black_48dp);
+                    mMusicSrv.go();
+                }
+            }
+        });
+
+        btnPlayMain.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                if (mMusicSrv.isPng()) {
+                    mMusicSrv.pausePlayer();
+                    btnPlayMain.setImageResource(R.drawable.play_button);
+                } else {
+                    btnPlayMain.setImageResource(R.drawable.pause_button);
+                    mMusicSrv.go();
+                }
+            }
+        });
+
+        btnNext.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                mMusicSrv.playNext();
+            }
+        });
+
+        btnPrev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                mMusicSrv.playPrev();
+            }
+        });
+
+        setSeekBarTouch(seekBar);
+
+
 
 
     }
+
+    public void setSeekBarTouch(SeekBar seekBar) {
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    // Change current position of the song playback
+                    mMusicSrv.seek(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+    }
+
+
+
 
     //Kết nối service
     private ServiceConnection musicConnection = new ServiceConnection(){
@@ -85,7 +187,6 @@ import java.util.ArrayList;
         @Override
         public void onServiceDisconnected(ComponentName name) {
             mMusicBound = false;
-            fragmentListSong.setGoneCardMusic();
         }
     };
 
@@ -96,7 +197,6 @@ import java.util.ArrayList;
             mPlayIntent = new Intent(this, MusicService.class);
             bindService(mPlayIntent, musicConnection, Context.BIND_AUTO_CREATE);
             startService(mPlayIntent);
-
         }
 
     }
@@ -106,6 +206,9 @@ import java.util.ArrayList;
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
+        }if (mLayout != null && (mLayout.getPanelState() == SlidingUpPanelLayout.PanelState.EXPANDED
+                || mLayout.getPanelState() == SlidingUpPanelLayout.PanelState.ANCHORED)) {
+            mLayout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
         } else {
             super.onBackPressed();
         }
@@ -161,8 +264,6 @@ import java.util.ArrayList;
         if (fragment instanceof FragmentListSong) {
             FragmentListSong fragmentListSong = (FragmentListSong) fragment;
             fragmentListSong.setOnHeadlineSelectedListener(this);
-        } else if (fragment instanceof  FragmentPlaySong) {
-            fragmentPlaySong.setOnHeadlineSelectedListener(this);
         } else if (fragment instanceof  FragmentListArtist) {
             fragmentListArtist.setOnHeadlineSelectedListener(this);
         } else if (fragment instanceof FragmentSongs) {
@@ -179,26 +280,10 @@ import java.util.ArrayList;
     }
 
     @Override
-    //mở fragment playmusic (hiển thị cửa sổ  chơi nhạc)
-    public void openFragmentPlayMusic(){
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        if (fragmentPlaySong.isAdded()) {
-                ft.show(fragmentPlaySong);
-                Log.d("fragment",": Added");
-
-        } else {
-            ft.add(R.id.container, fragmentPlaySong, "findThisFragment")
-                    .addToBackStack(null);
-        }
-        ft.commit();
-    }
-
-    @Override
     public void openFragmentSongs() {
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         if (fragmentSongs.isAdded()) {
             ft.show(fragmentSongs);
-
         } else {
             ft.replace(R.id.container, fragmentSongs, "fragmentSong").addToBackStack(null);
         }
@@ -210,7 +295,39 @@ import java.util.ArrayList;
     public void playSong(int pos){
         mMusicSrv.setSong(pos);
         mMusicSrv.playSong();
-        fragmentListSong.setVisibleCardMusic();
+        mLayout.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
+        panelUp.setVisibility(View.VISIBLE);
+        upLoadImageSong();
+
+    }
+
+    //Set hình ảnh cho ảnh bìa bài hát và ảnh tiêu đề
+    public void upLoadImageSong(){
+        mImageLoader = ImageLoader.getInstance();
+        mImageLoader.init(ImageLoaderConfiguration.createDefault(this));
+        final Uri ART_CONTENT_URI = Uri.parse("content://media/external/audio/albumart");
+        Uri albumArtUri = ContentUris.withAppendedId(ART_CONTENT_URI, mMusicSrv.getSong().getAlbumID());
+
+        mImageLoader = ImageLoader.getInstance();
+        try {
+            mImageLoader.loadImage(String.valueOf(albumArtUri), new SimpleImageLoadingListener() {
+
+                @Override
+                public void onLoadingComplete(String imageUri, View view, Bitmap loadedImage) {
+                    super.onLoadingComplete(imageUri, view, loadedImage);
+                    imgCoverSong.setImageBitmap(loadedImage);
+                    imgSmallCover.setImageBitmap(loadedImage);
+                }
+
+                @Override
+                public void onLoadingFailed(String imageUri, View view, FailReason failReason) {
+                    super.onLoadingFailed(imageUri, view, failReason);
+                }
+            });
+        } catch (Exception e){
+            imgCoverSong.setImageResource(R.drawable.img_music);
+            imgSmallCover.setImageResource(R.drawable.img_music);
+        }
     }
 
     @Override
@@ -283,40 +400,47 @@ import java.util.ArrayList;
 
     @Override
     public void updateSeekbar(int position) {
-        fragmentPlaySong.updateSeekbar(position);
-        fragmentListSong.updateSeekbar(position);
+        seekBar.setProgress(position);
     }
 
     @Override
     public void updateMaxSeekbar(int duration) {
-        fragmentPlaySong.updateMaxSeekbar(duration);
-        fragmentListSong.updateMaxSeekbar(duration);
+
+        seekBar.setMax(duration);
     }
 
     @Override
-    public void updateTextNameSong(String s) {
-        fragmentPlaySong.setTextNameSong(s);
-        fragmentListSong.setTextNameSong(s);
+    public void updateTitleSong(String t, String a) {
+        tvNameSong.setText(t);
+        tvNameArtist.setText(a);
     }
 
     @Override
-    public void updateTextTimePlay(String s) {
-        fragmentPlaySong.setTextTimePosn(s);
+    public void updateTextTime(String timePlay, String timeMax) {
+
+        tvTimePlay.setText(timePlay);
+        tvTimeMax.setText(timeMax);
     }
 
     @Override
     public void updateUIbtnPause() {
-        fragmentListSong.setBtnPause();
-        fragmentPlaySong.setBtnPause();
+        btnPlayMain.setImageResource(R.drawable.pause_button);
+        btnPlay.setImageResource(R.drawable.round_pause_black_48dp);
+
     }
 
     @Override
     public void updateUIbtnPlay() {
-        fragmentListSong.setBtnPlay();
-        fragmentPlaySong.setBtnPlay();
+        btnPlayMain.setImageResource(R.drawable.play_button);
+        btnPlay.setImageResource(R.drawable.round_play_arrow_black_48dp);
     }
 
     @Override
+    public void updateUIimageSong() {
+        upLoadImageSong();
+    }
+
+        @Override
     public void setId(long id) {
         fragmentSongs.setKeyWord(id);
     }

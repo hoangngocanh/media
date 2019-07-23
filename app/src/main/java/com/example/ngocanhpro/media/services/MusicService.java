@@ -1,6 +1,10 @@
 package com.example.ngocanhpro.media.services;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.content.Intent;
@@ -12,6 +16,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.PowerManager;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.app.Notification;
 import android.app.PendingIntent;
@@ -56,6 +61,33 @@ public class MusicService extends  Service implements
         //create mPlayer
         mPlayer = new MediaPlayer();
         initMusicPlayer();
+
+        super.onCreate();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            startMyOwnForeground();
+        else
+            startForeground(1, new Notification());
+    }
+
+    // Dùng với android 8 trở lên
+    private void startMyOwnForeground(){
+        String NOTIFICATION_CHANNEL_ID = "com.example.simpleapp";
+        String channelName = "My Background Service";
+        NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
+        chan.setLightColor(Color.BLUE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager manager = (NotificationManager) getSystemService(getApplication().NOTIFICATION_SERVICE);
+        assert manager != null;
+        manager.createNotificationChannel(chan);
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+        Notification notification = notificationBuilder.setOngoing(true)
+                .setSmallIcon(R.drawable.ic_play)
+                .setContentTitle("App is running in background")
+                .setPriority(NotificationManager.IMPORTANCE_MIN)
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .build();
+        startForeground(2, notification);
     }
 
     //Khởi tạo music layer
@@ -138,10 +170,11 @@ public class MusicService extends  Service implements
         mPlayer.prepareAsync();
         Log.d("Phát bài hát"," playSong()");
 
-        mIMusicRemote.updateTextNameSong(songTitle);
+        mIMusicRemote.updateTitleSong(song.getTitle(), song.getArtist());
 
         //Sửa lại nút hiển thị giao diện pause khi phát bài hát
         mIMusicRemote.updateUIbtnPause();
+        mIMusicRemote.updateUIimageSong();
 
     }
 
@@ -204,21 +237,6 @@ public class MusicService extends  Service implements
         //start playback
         Log.v("tag","Chuẩn bị phát");
         mp.start();
-        Intent notIntent = new Intent(this, MainActivity.class);
-        notIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendInt = PendingIntent.getActivity(this, 0,
-                notIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        Notification.Builder builder = new Notification.Builder(this);
-
-        builder.setContentIntent(pendInt)
-                .setSmallIcon(R.drawable.ic_play)
-                .setTicker(songTitle)
-                .setOngoing(true)
-                .setContentTitle("Playing")
-                .setContentText(songTitle);
-        Notification not = builder.build();
-        startForeground(NOTIFY_ID, not);
 
         //Cập nhật thời gian phát seekbar
         mIMusicRemote.updateMaxSeekbar(getDur());
@@ -229,7 +247,7 @@ public class MusicService extends  Service implements
         public void run() {
             if(mPlayer.isPlaying()) {
                 mIMusicRemote.updateSeekbar(getPosn());
-                mIMusicRemote.updateTextTimePlay(convertToTimeFommat(getPosn()));
+                mIMusicRemote.updateTextTime(convertToTimeFommat(getPosn()),convertToTimeFommat(getDur()));
             }
             myHandler.postDelayed(this, mInterval);
         }

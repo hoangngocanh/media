@@ -4,10 +4,11 @@ public interface IMusicRemote {
 
     void updateSeekbar(int position);
     void updateMaxSeekbar(int duration);
-    void updateTextNameSong(String s);
-    void updateTextTimePlay(String s);
+    void updateTitleSong(String title, String artist);
+    void updateTextTime(String timePlay, String timeMax);
     void updateUIbtnPause();
     void updateUIbtnPlay();
+    void updateUIimageSong();
 
 
 
