@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rl_custom_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+
+    android:orientation="vertical"
+    android:layout_gravity="center">
+    <LinearLayout
+        android:background="@drawable/bg_shadow"
+        android:padding="5dp"
+        android:layout_margin="20dp"
+        android:orientation="vertical"
+        android:layout_gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:id="@+id/ib_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:background="@null"
+            />
+        <TextView
+            android:id="@+id/tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Playlist name"
+            android:layout_gravity="center"
+            android:padding="20sp"
+            android:textColor="@color/tectColor"
+            android:textSize="27dp"
+            />
+        <EditText
+            android:id="@+id/edit_playlist"
+            android:textSize="25dp"
+            android:layout_centerInParent="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <Button
+                android:id="@+id/btn_cancel"
+                android:background="#ffffff"
+                android:text="CANCEL"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <Button
+
+                android:id="@+id/btn_save"
+                android:layout_alignParentRight="true"
+                android:background="#ffffff"
+                android:text="SAVE"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </RelativeLayout>
+    </LinearLayout>
+
+</LinearLayout>

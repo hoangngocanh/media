@@ -28,11 +28,13 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.example.ngocanhpro.media.db.DBHandler;
 import com.example.ngocanhpro.media.enity.Song;
 import com.example.ngocanhpro.media.fragment.FragmentListAlbum;
 import com.example.ngocanhpro.media.fragment.FragmentListArtist;
 import com.example.ngocanhpro.media.fragment.FragmentListSong;
 import com.example.ngocanhpro.media.fragment.FragmentPlaySong;
+import com.example.ngocanhpro.media.fragment.FragmentPlaylist;
 import com.example.ngocanhpro.media.fragment.FragmentSongs;
 import com.example.ngocanhpro.media.interf.IControlPlayMedia;
 import com.example.ngocanhpro.media.interf.IMusicRemote;
@@ -56,6 +58,7 @@ import java.util.ArrayList;
     public FragmentListArtist fragmentListArtist = new FragmentListArtist();
     public FragmentListAlbum fragmentListAlbum = new FragmentListAlbum();
     public FragmentSongs fragmentSongs = new FragmentSongs();
+    public FragmentPlaylist fragmentPlaylist = new FragmentPlaylist();
     private boolean mMusicBound=false;
     ImageButton btnPlay, btnPlayMain, btnPrev, btnNext;
     TextView tvNameSong, tvNameArtist, tvTimePlay, tvTimeMax;
@@ -69,6 +72,9 @@ import java.util.ArrayList;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+
         mLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_panel);
         imgSmallCover = (ImageView) findViewById(R.id.img_song_small_cover);
         imgCoverSong = (ImageView) findViewById(R.id.img_song_cover);
@@ -270,6 +276,8 @@ import java.util.ArrayList;
             fragmentSongs.setOnHeadlineSelectedListener(this);
         } else if (fragment instanceof FragmentListAlbum) {
             fragmentListAlbum.setOnHeadlineSelectedListener(this);
+        } else if (fragment instanceof FragmentPlaylist) {
+            fragmentPlaylist.setOnHeadlineSelectedListener(this);
         }
     }
 
@@ -473,11 +481,14 @@ import java.util.ArrayList;
     }
 
     public void opentFragmentPlayList() {
-        AppCompatActivity activity = (AppCompatActivity) this;
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        if (fragmentPlaylist.isAdded()) {
+            ft.show(fragmentPlaylist);
 
-        activity.getSupportFragmentManager().beginTransaction().replace(R.id.container, fragmentSongs).addToBackStack(null).commit();
-        fragmentSongs.setKeyWord((4));
-
+        } else {
+            ft.replace(R.id.container, fragmentPlaylist, "fragmentPlaylist").addToBackStack(null);
+        }
+        ft.commit();
     }
 
     private void opentFragmentListSong() {

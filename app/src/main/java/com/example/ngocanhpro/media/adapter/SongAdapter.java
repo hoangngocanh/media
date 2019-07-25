@@ -3,18 +3,28 @@ package com.example.ngocanhpro.media.adapter;
 import android.content.ContentUris;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.ngocanhpro.media.R;
+import com.example.ngocanhpro.media.db.DBHandler;
 import com.example.ngocanhpro.media.enity.Song;
 import com.example.ngocanhpro.media.fragment.FragmentListSong;
 import com.example.ngocanhpro.media.interf.IControlPlayMedia;
@@ -24,6 +34,7 @@ import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListene
 
 import java.util.ArrayList;
 
+import static android.content.Context.LAYOUT_INFLATER_SERVICE;
 import static android.os.Build.ID;
 
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> {
@@ -32,6 +43,9 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
     public FragmentListSong fragmentListSong = new FragmentListSong();
     private Context mContext;
     IControlPlayMedia iControlPlayMedia;
+    //init data base
+    private DBHandler mDB;
+
 
 
     public interface OnItemClickListener {
@@ -47,6 +61,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
         this.iControlPlayMedia = (IControlPlayMedia) context;
         mImageLoader = ImageLoader.getInstance();
         mImageLoader.init(ImageLoaderConfiguration.createDefault(context));
+        mDB = new DBHandler(mContext);
     }
 
     public SongAdapter(ArrayList<Song> songs) {
@@ -78,7 +93,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
         });
         holder.btnExpand.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
+            public void onClick(final View view) {
 
                 //creating a popup menu
                 PopupMenu popup = new PopupMenu(mContext, holder.btnExpand);
@@ -106,7 +121,8 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
                                                 //handle menu2 click
                                                 return true;
                                             case R.id.nav_new:
-                                                //handle menu3 click
+                                                //Tạo 1 playlist mới
+                                                showPopup(view);
                                                 return true;
                                             case R.id.nav_new1:
                                                 //handle menu3 click
@@ -160,6 +176,37 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
                 }
             });
         }
+    }
+
+    public void showPopup(View v) {
+
+        View popupView = LayoutInflater.from(mContext).inflate(R.layout.popup_new_playlist, null);
+        final PopupWindow popupWindow = new PopupWindow(popupView, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
+        Button btnSave = (Button) popupView.findViewById(R.id.btn_save);
+        popupWindow.showAtLocation(v, Gravity.CENTER, 0, 0);
+        final EditText editPlayList = (EditText) popupView.findViewById(R.id.edit_playlist);
+
+        popupWindow.setFocusable(true);
+        popupWindow.update();
+        btnSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final String name = editPlayList.getText().toString();
+                mDB.addPlayList(name); // tạo mới 1 playlist
+                Toast.makeText(mContext.getApplicationContext(),"Tạo playlist "+name,Toast.LENGTH_SHORT).show();
+                popupWindow.dismiss();
+
+            }
+        });
+        Button btnCancel = (Button) popupView.findViewById(R.id.btn_cancel);
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                popupWindow.dismiss();
+            }
+        });
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.GRAY));
+
+
     }
 }
 

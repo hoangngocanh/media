@@ -8,8 +8,6 @@ public class Song {
     private String artist;
     private long albumID;
 
-    private Uri imagePath;
-
     public Song(long songID, String songTitle, String songArtist) {
         id=songID;
         title=songTitle;
@@ -47,13 +45,6 @@ public class Song {
         this.artist = artist;
     }
 
-    public Uri getImagePath() {
-        return imagePath;
-    }
-
-    public void setImagePath(Uri imagePath) {
-        this.imagePath = imagePath;
-    }
 
     public long getAlbumID() {
         return albumID;
