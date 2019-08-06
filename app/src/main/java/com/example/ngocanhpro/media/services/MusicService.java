@@ -40,6 +40,11 @@ public class MusicService extends  Service implements
     private IMusicRemote mIMusicRemote;
     private Handler myHandler = new Handler();
 
+    public class MusicBinder extends Binder {
+        public MusicService getService() {
+            return MusicService.this;
+        }
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -273,11 +278,7 @@ public class MusicService extends  Service implements
         stopForeground(true);
     }
 
-    public class MusicBinder extends Binder {
-        public MusicService getService() {
-            return MusicService.this;
-        }
-    }
+
 
 }
 

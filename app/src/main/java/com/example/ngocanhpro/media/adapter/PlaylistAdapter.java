@@ -1,9 +1,6 @@
 package com.example.ngocanhpro.media.adapter;
 
-import android.content.ContentUris;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -13,13 +10,14 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.ngocanhpro.media.R;
-import com.example.ngocanhpro.media.enity.Album;
+import com.example.ngocanhpro.media.db.DBHandler;
 import com.example.ngocanhpro.media.enity.Playlist;
+import com.example.ngocanhpro.media.interf.IUpdateLists;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
-import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import java.util.ArrayList;
 
@@ -27,21 +25,25 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyView
     private ArrayList<Playlist> mPlaylists = new ArrayList<>();
     private ImageLoader mImageLoader;
     private Context mContext;
+    private DBHandler mDB;
+    private IUpdateLists mIUpdateLists;
 
-    public interface OnItemClickListener {
+    public interface IOnItemClickListener {
         void onItemClick(Playlist item);
     }
 
 
 
-    private OnItemClickListener listener;
+    private IOnItemClickListener listener;
 
-    public PlaylistAdapter(ArrayList<Playlist> arrayList, OnItemClickListener listener, Context context) {
+    public PlaylistAdapter(ArrayList<Playlist> arrayList, IOnItemClickListener listener, Context context) {
         this.mPlaylists = arrayList;
         this.listener = listener;
         this.mContext = context;
         mImageLoader = ImageLoader.getInstance();
         mImageLoader.init(ImageLoaderConfiguration.createDefault(context));
+        mDB = new DBHandler(context);
+        this.mIUpdateLists = (IUpdateLists) context;
     }
 
 
@@ -56,7 +58,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyView
 
     @Override
     public void onBindViewHolder(final MyViewHolder holder, int position) {
-        Playlist playlist = mPlaylists.get(position);
+        final Playlist playlist = mPlaylists.get(position);
         holder.tvName.setText(playlist.getName());
         holder.btnExpand.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -76,7 +78,12 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyView
                             case R.id.nav_rename:
                                 return true;
                             case R.id.nav_delete:
-                                //handle menu3 click
+                                if (mDB.deletePlayList(playlist.getId())) {
+                                    mDB.deleteSongPlaylist(playlist.getId());
+                                    Toast.makeText(mContext.getApplicationContext(),
+                                            "Đã xóa playlist "+playlist.getName(),Toast.LENGTH_SHORT).show();
+                                    mIUpdateLists.updatePlaylist(); // cap nhat lai danh sach
+                                }
                                 return true;
                             default:
                                 return false;
@@ -108,7 +115,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyView
             btnExpand = (Button) view.findViewById(R.id.btn_expand);
 
         }
-        public void bind(final Playlist item, final OnItemClickListener listener) {
+        public void bind(final Playlist item, final IOnItemClickListener listener) {
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     listener.onItemClick(item);

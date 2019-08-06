@@ -22,8 +22,10 @@ public interface IControlPlayMedia {
     void playSong(int pos);
     void setListSong(ArrayList<Song> array);
     void openFragmentSongs();
-    void setId(long id);
+    void setIdAlbum(long id);
     void playSongById(long id);
+    void openFragmentSongsPlaylist();
+    void setIdPlaylist(long id);
 
 
 }

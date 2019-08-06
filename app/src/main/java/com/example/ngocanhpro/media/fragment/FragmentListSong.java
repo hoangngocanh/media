@@ -130,7 +130,7 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
             }
             while (musicCursor.moveToNext());
 
-            mRecyclerView.setAdapter(new SongAdapter(mListSong, new SongAdapter.OnItemClickListener() {
+            mRecyclerView.setAdapter(new SongAdapter(mListSong, new SongAdapter.IOnItemClickListener() {
                 @Override public void onItemClick(Song item) {
                     Toast.makeText(getActivity(),"playing " + item.getTitle(),Toast.LENGTH_SHORT).show();
                     iControlPlayMedia.setListSong(mListSong);
@@ -147,6 +147,8 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
 
     }
+
+
 
 
 }

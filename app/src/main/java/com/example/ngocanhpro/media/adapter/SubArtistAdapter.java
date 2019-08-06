@@ -13,8 +13,6 @@ import android.widget.TextView;
 
 import com.example.ngocanhpro.media.R;
 import com.example.ngocanhpro.media.enity.Album;
-import com.example.ngocanhpro.media.enity.Artist;
-import com.example.ngocanhpro.media.enity.Song;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
@@ -30,13 +28,13 @@ public class SubArtistAdapter extends RecyclerView.Adapter<SubArtistAdapter.View
     private ImageLoader mImageLoader;
     private Context mContext;
 
-    public interface OnItemClickListener {
+    public interface IOnItemClickListener {
         void onItemClick(Album item);
     }
-    private SubArtistAdapter.OnItemClickListener listener;
+    private IOnItemClickListener listener;
 
 
-    public SubArtistAdapter(ArrayList<Album> list, Context context, SubArtistAdapter.OnItemClickListener listener) {
+    public SubArtistAdapter(ArrayList<Album> list, Context context, IOnItemClickListener listener) {
         this.mContext = context;
         mImageLoader = ImageLoader.getInstance();
         mImageLoader.init(ImageLoaderConfiguration.createDefault(context));
@@ -55,7 +53,7 @@ public class SubArtistAdapter extends RecyclerView.Adapter<SubArtistAdapter.View
             imgAlbum = itemView.findViewById(R.id.img_sub_album);
         }
 
-        public void bind(final Album item, final SubArtistAdapter.OnItemClickListener listener) {
+        public void bind(final Album item, final IOnItemClickListener listener) {
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     listener.onItemClick(item);

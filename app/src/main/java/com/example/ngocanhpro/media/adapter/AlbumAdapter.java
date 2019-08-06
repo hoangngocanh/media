@@ -23,13 +23,13 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.MyViewHolder
     private ArrayList<Album> mAlbum = new ArrayList<>();
     private ImageLoader mImageLoader;
 
-    public interface OnItemClickListener {
+    public interface IOnItemClickListener {
         void onItemClick(Album item);
     }
 
-    private OnItemClickListener listener;
+    private IOnItemClickListener listener;
 
-    public AlbumAdapter(ArrayList<Album> arrayList, OnItemClickListener listener, Context context) {
+    public AlbumAdapter(ArrayList<Album> arrayList, IOnItemClickListener listener, Context context) {
         this.mAlbum = arrayList;
         this.listener = listener;
         mImageLoader = ImageLoader.getInstance();
@@ -80,7 +80,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.MyViewHolder
             tvNum = (TextView) view.findViewById(R.id.tv_sub);
             imgArist = (ImageView) view.findViewById(R.id.img_album);
         }
-        public void bind(final Album item, final OnItemClickListener listener) {
+        public void bind(final Album item, final IOnItemClickListener listener) {
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     listener.onItemClick(item);

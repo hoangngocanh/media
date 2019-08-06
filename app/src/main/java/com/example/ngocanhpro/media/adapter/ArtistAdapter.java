@@ -4,9 +4,6 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -16,12 +13,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.ngocanhpro.media.R;
 import com.example.ngocanhpro.media.enity.Album;
 import com.example.ngocanhpro.media.enity.Artist;
-import com.example.ngocanhpro.media.enity.Song;
 import com.example.ngocanhpro.media.fragment.FragmentSongs;
 import com.example.ngocanhpro.media.interf.IControlPlayMedia;
 import com.nostra13.universalimageloader.core.ImageLoader;
@@ -93,12 +88,12 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.MyViewHold
 
 
         SubArtistAdapter itemInnerRecyclerView = new SubArtistAdapter(mArtists.get(position).getListAlbum(), context,
-            new SubArtistAdapter.OnItemClickListener() {
+            new SubArtistAdapter.IOnItemClickListener() {
                 @Override
                 public void onItemClick(Album item) {
                     Log.v("Đã chọn: " + item.getNameAlbum(), ">>>>>>>>>>>");
                     iControlPlayMedia.openFragmentSongs();
-                    iControlPlayMedia.setId(item.getId());
+                    iControlPlayMedia.setIdAlbum(item.getId());
 
                 }
         });

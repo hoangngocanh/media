@@ -97,10 +97,10 @@ public class FragmentListAlbum extends Fragment implements LoaderManager.LoaderC
             while (musicCursor.moveToNext());
         }
 
-        mRecyclerView.setAdapter(new AlbumAdapter(mListAlbum, new AlbumAdapter.OnItemClickListener() {
+        mRecyclerView.setAdapter(new AlbumAdapter(mListAlbum, new AlbumAdapter.IOnItemClickListener() {
             @Override public void onItemClick(Album item) {
                 iControlPlayMedia.openFragmentSongs();
-                iControlPlayMedia.setId(item.getId());
+                iControlPlayMedia.setIdAlbum(item.getId());
             }
         },getContext()));
 

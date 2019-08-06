@@ -1,30 +1,29 @@
 package com.example.ngocanhpro.media.adapter;
 
+import android.app.Dialog;
 import android.content.ContentUris;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
-import android.view.Gravity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.PopupMenu;
-import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.ngocanhpro.media.R;
 import com.example.ngocanhpro.media.db.DBHandler;
+import com.example.ngocanhpro.media.enity.Playlist;
 import com.example.ngocanhpro.media.enity.Song;
 import com.example.ngocanhpro.media.fragment.FragmentListSong;
 import com.example.ngocanhpro.media.interf.IControlPlayMedia;
@@ -34,27 +33,26 @@ import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListene
 
 import java.util.ArrayList;
 
-import static android.content.Context.LAYOUT_INFLATER_SERVICE;
-import static android.os.Build.ID;
-
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> {
     private ArrayList<Song> mSongs = new ArrayList<>();
     private ImageLoader mImageLoader;
     public FragmentListSong fragmentListSong = new FragmentListSong();
     private Context mContext;
+    private ArrayList<String> mArray = new ArrayList<>();
     IControlPlayMedia iControlPlayMedia;
+    private Song mSong;
     //init data base
     private DBHandler mDB;
 
 
 
-    public interface OnItemClickListener {
+    public interface IOnItemClickListener {
         void onItemClick(Song item);
     }
 
-    private OnItemClickListener listener;
+    private IOnItemClickListener listener;
 
-    public SongAdapter(ArrayList<Song> mSongs, OnItemClickListener listener, Context context) {
+    public SongAdapter(ArrayList<Song> mSongs, IOnItemClickListener listener, Context context) {
         this.mSongs = mSongs;
         this.listener = listener;
         this.mContext = context;
@@ -78,11 +76,11 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
 
     @Override
     public void onBindViewHolder(final MyViewHolder holder, final int position) {
-        final Song song = mSongs.get(position);
-        holder.title.setText(song.getTitle());
-        holder.artist.setText(song.getArtist());
+        mSong = mSongs.get(position);
+        holder.title.setText(mSong.getTitle());
+        holder.artist.setText(mSong.getArtist());
         final Uri ART_CONTENT_URI = Uri.parse("content://media/external/audio/albumart");
-        Uri albumArtUri = ContentUris.withAppendedId(ART_CONTENT_URI, song.getAlbumID());
+        Uri albumArtUri = ContentUris.withAppendedId(ART_CONTENT_URI, mSong.getAlbumID());
         mImageLoader = ImageLoader.getInstance();
         mImageLoader.loadImage(String.valueOf(albumArtUri),new SimpleImageLoadingListener(){
             @Override
@@ -92,9 +90,10 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
             }
         });
         holder.btnExpand.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(final View view) {
-
+                Log.v(">>>>>>>>>>"," "+position);
                 //creating a popup menu
                 PopupMenu popup = new PopupMenu(mContext, holder.btnExpand);
                 //inflating menu from xml resource
@@ -103,40 +102,18 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
                 popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
+
                         switch (item.getItemId()) {
                             case R.id.nav_play:
                                 iControlPlayMedia.setListSong(mSongs);
                                 iControlPlayMedia.playSong(position);
                                 return true;
                             case R.id.nav_add:
-                                PopupMenu popup = new PopupMenu(mContext, holder.btnExpand);
-                                //inflating menu from xml resource
-                                popup.inflate(R.menu.menu_add_expand);
-                                //adding click listener
-                                popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                                    @Override
-                                    public boolean onMenuItemClick(MenuItem item) {
-                                        switch (item.getItemId()) {
-                                            case R.id.nav_current_playlist:
-                                                //handle menu2 click
-                                                return true;
-                                            case R.id.nav_new:
-                                                //Tạo 1 playlist mới
-                                                showPopup(view);
-                                                return true;
-                                            case R.id.nav_new1:
-                                                //handle menu3 click
-                                                return true;
-                                            default:
-                                                return false;
-                                        }
-                                    }
-                                });
-                                //displaying the popup
-                                popup.show();
+//                              //Hiển thị cửa sổ add playlist
+                                showListAddPlaylist(position);
                                 return true;
                             case R.id.nav_delete:
-                                //handle menu3 click
+                                // Xóa bài hát
                                 return true;
                             default:
                                 return false;
@@ -169,7 +146,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
             imgSong = (ImageView) view.findViewById(R.id.img_song);
             btnExpand = (Button) view.findViewById(R.id.btn_expand);
         }
-        public void bind(final Song item, final OnItemClickListener listener) {
+        public void bind(final Song item, final IOnItemClickListener listener) {
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     listener.onItemClick(item);
@@ -178,35 +155,84 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
         }
     }
 
-    public void showPopup(View v) {
-
-        View popupView = LayoutInflater.from(mContext).inflate(R.layout.popup_new_playlist, null);
-        final PopupWindow popupWindow = new PopupWindow(popupView, WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT);
-        Button btnSave = (Button) popupView.findViewById(R.id.btn_save);
-        popupWindow.showAtLocation(v, Gravity.CENTER, 0, 0);
-        final EditText editPlayList = (EditText) popupView.findViewById(R.id.edit_playlist);
-
-        popupWindow.setFocusable(true);
-        popupWindow.update();
+    //Hiển thị cửa số chứa text edit để gõ tên playlist mới, tạo playlist mới
+    public void showDialogAddPlaylist(int position) {
+        mSong = mSongs.get(position);
+        final Dialog dialog = new Dialog(mContext);
+        dialog.setContentView(R.layout.popup_new_playlist);
+        final EditText editPlayList = (EditText) dialog.findViewById(R.id.edit_playlist);
+        Button btnSave = (Button) dialog.findViewById(R.id.btn_save);
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 final String name = editPlayList.getText().toString();
-                mDB.addPlayList(name); // tạo mới 1 playlist
+                if (name != "" || name != null) {
+                    int idPlaylist = mDB.addPlayList(name); // tạo mới 1 playlist
+                    long idAlbum, idSong;
+                    String nameSong;
+                    String artist;
+                    idAlbum = mSong.getAlbumID();
+                    idSong = mSong.getId();
+                    nameSong = mSong.getTitle();
+                    artist = mSong.getArtist();
+                    mDB.addSongToPlayList(idPlaylist, idSong, nameSong, artist, idAlbum);
+
+                }
                 Toast.makeText(mContext.getApplicationContext(),"Tạo playlist "+name,Toast.LENGTH_SHORT).show();
-                popupWindow.dismiss();
+                dialog.dismiss();
 
             }
         });
-        Button btnCancel = (Button) popupView.findViewById(R.id.btn_cancel);
+        Button btnCancel = (Button) dialog.findViewById(R.id.btn_cancel);
         btnCancel.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                popupWindow.dismiss();
+                dialog.dismiss();
             }
         });
-        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.GRAY));
+        dialog.show();
 
 
+    }
+
+    //Hiển thị cửa sổ chứa new (add playlist mới) và các playlist hiện có
+    public void showListAddPlaylist(final int position) {
+        mSong = mSongs.get(position);
+        mArray.clear();
+        mArray.add("New +");
+        final ArrayList<Playlist> playlists = mDB.selectAllPlaylist();
+        for(int i=0; i < playlists.size(); i++) {
+            mArray.add(playlists.get(i).getName());
+        }
+        final Dialog dialog = new Dialog(mContext);
+        dialog.setContentView(R.layout.dialog_list_playlist);
+        ListView lv = (ListView) dialog.findViewById(R.id.lv_playlist);
+        ArrayAdapter adapter = new ArrayAdapter<String>(mContext,R.layout.item_dialog_playlist, mArray);
+        lv.setAdapter(adapter);
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> arg0, View arg1, int pos, long id) {
+                if (pos == 0) {
+                    showDialogAddPlaylist(position);
+
+                    dialog.dismiss();
+                } else if (pos > 0) {
+                    long idPlaylist, idAlbum, idSong;
+                    String nameSong;
+                    String artist;
+                    idPlaylist = playlists.get(pos-1).getId();
+                    idAlbum = mSong.getAlbumID();
+                    idSong = mSong.getId();
+                    nameSong = mSong.getTitle();
+                    artist = mSong.getArtist();
+                    mDB.addSongToPlayList(idPlaylist, idSong, nameSong, artist, idAlbum);
+                    dialog.dismiss();
+                }
+
+            }
+
+        });
+        dialog.show();
     }
 }
 

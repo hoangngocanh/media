@@ -36,8 +36,10 @@ import com.example.ngocanhpro.media.fragment.FragmentListSong;
 import com.example.ngocanhpro.media.fragment.FragmentPlaySong;
 import com.example.ngocanhpro.media.fragment.FragmentPlaylist;
 import com.example.ngocanhpro.media.fragment.FragmentSongs;
+import com.example.ngocanhpro.media.fragment.FragmentSongsDataBase;
 import com.example.ngocanhpro.media.interf.IControlPlayMedia;
 import com.example.ngocanhpro.media.interf.IMusicRemote;
+import com.example.ngocanhpro.media.interf.IUpdateLists;
 import com.example.ngocanhpro.media.services.MusicService;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
@@ -49,7 +51,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
     public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener,
-            IControlPlayMedia, IMusicRemote {
+            IControlPlayMedia, IMusicRemote, IUpdateLists {
     private ArrayList<Song> mList = new ArrayList<>();
     private MusicService mMusicSrv;
     private Intent mPlayIntent;
@@ -59,6 +61,7 @@ import java.util.ArrayList;
     public FragmentListAlbum fragmentListAlbum = new FragmentListAlbum();
     public FragmentSongs fragmentSongs = new FragmentSongs();
     public FragmentPlaylist fragmentPlaylist = new FragmentPlaylist();
+    public FragmentSongsDataBase fragmentSongsDataBase = new FragmentSongsDataBase();
     private boolean mMusicBound=false;
     ImageButton btnPlay, btnPlayMain, btnPrev, btnNext;
     TextView tvNameSong, tvNameArtist, tvTimePlay, tvTimeMax;
@@ -72,8 +75,6 @@ import java.util.ArrayList;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-
 
         mLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_panel);
         imgSmallCover = (ImageView) findViewById(R.id.img_song_small_cover);
@@ -278,6 +279,8 @@ import java.util.ArrayList;
             fragmentListAlbum.setOnHeadlineSelectedListener(this);
         } else if (fragment instanceof FragmentPlaylist) {
             fragmentPlaylist.setOnHeadlineSelectedListener(this);
+        } else if (fragment instanceof FragmentSongsDataBase) {
+            fragmentSongsDataBase.setOnHeadlineSelectedListener(this);
         }
     }
 
@@ -449,11 +452,11 @@ import java.util.ArrayList;
     }
 
         @Override
-    public void setId(long id) {
+    public void setIdAlbum(long id) {
         fragmentSongs.setKeyWord(id);
     }
 
-        public void setImusic(){
+    public void setImusic(){
         mMusicSrv.setmIMusicRemote(this);
     }
 
@@ -502,5 +505,26 @@ import java.util.ArrayList;
         ft.commit();
     }
 
+    @Override
+    public void openFragmentSongsPlaylist() {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        if (fragmentSongsDataBase.isAdded()) {
+            ft.show(fragmentSongsDataBase);
 
-}
+        } else {
+            ft.replace(R.id.container, fragmentSongsDataBase, "fragmentSong").addToBackStack(null);
+        }
+        ft.commit();
+    }
+
+    @Override
+    public void updatePlaylist() {
+        fragmentPlaylist.updatePlaylist();
+    }
+
+    @Override
+    public void setIdPlaylist(long id) {
+        fragmentSongsDataBase.setIdPlaylist(id);
+    }
+
+    }

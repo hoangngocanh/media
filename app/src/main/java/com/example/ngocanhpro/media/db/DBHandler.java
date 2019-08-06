@@ -6,6 +6,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.example.ngocanhpro.media.enity.Playlist;
+import com.example.ngocanhpro.media.enity.Song;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +48,7 @@ public class DBHandler extends SQLiteOpenHelper {
         db.execSQL(CREATE_TABLE_LIST_PLAYLIST);
 
         String CREATE_TABLE_LIST_SONG = "CREATE TABLE " + LISTSONG + "(" + KEY_ID + " INTEGER,"
-                + NAMESONG + " TEXT, "+ IDSONG + " INTEGER, " + ARTIST + " TEXT," + IDALBUM + " INTEGER,"
+                + IDSONG + " INTEGER, " + NAMESONG + " TEXT, " + ARTIST + " TEXT," + IDALBUM + " INTEGER,"
                 + " FOREIGN KEY ("+KEY_ID+") REFERENCES "+PLAYLISTS+"("+KEY_ID+")"
                 + " ON DELETE CASCADE );"; // on delete cascade để có thể xóa dữ liệu từ bảng phụ có khóa ngoại
         db.execSQL(CREATE_TABLE_LIST_SONG);
@@ -61,29 +64,108 @@ public class DBHandler extends SQLiteOpenHelper {
     }
 
     //Thêm 1 playlist vào bảng
-    public void addPlayList(String name) {
+    public int addPlayList(String name) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
         values.put(NAME_PLAYLIST, name); // Playlist Name
+        values.put(NUMBER, 0);
 
         // Inserting Row
-        db.insert(PLAYLISTS, null, values);
+        int id;
+        id = (int) db.insert(PLAYLISTS, null, values);
         db.close(); // Closing database connection
+        return id;
     }
 
     //Lấy dữ liệu toàn bộ danh sách playlist
-    public Cursor selectAllPlaylist() {
+    public ArrayList<Playlist> selectAllPlaylist() {
+        ArrayList<Playlist> arrayList = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         String selectQuery = "SELECT * FROM "+ PLAYLISTS;
-        return db.rawQuery(selectQuery, null);
+        Cursor c = db.rawQuery(selectQuery, null);
+        if (c.moveToFirst()) {
+            do {
+                arrayList.add(new Playlist(Integer.parseInt(c.getString(0)), c.getString(1)));
+            }
+            while (c.moveToNext());
+        }
+        return arrayList;
     }
+
 
     //Xóa 1 hàng playlist theo id
     public boolean deletePlayList(int id)
     {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.delete(PLAYLISTS, KEY_ID + "= "+id, null) > 0;
+    }
+
+    // Thêm bài hát vào  playlist
+    public void addSongToPlayList (long id,long idSong, String name, String artist, long idAlbum) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(KEY_ID, id);
+        values.put(IDSONG, idSong);
+        values.put(NAMESONG, name);
+        values.put(ARTIST, artist);
+        values.put(IDALBUM, idAlbum);
+
+        // Inserting Row
+        db.insert(LISTSONG, null, values);
+        db.close(); // Closing database connection
+    }
+
+    //Lấy dữ liệu toàn bộ danh sách baì hát theo playlist
+    public ArrayList<Song> selectListSong() {
+        ArrayList<Song> arrayList = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String selectQuery = "SELECT * FROM "+ LISTSONG;
+        Cursor c = db.rawQuery(selectQuery, null);
+        if (c.moveToFirst()) {
+            do {
+                long id = Long.parseLong(c.getString(1));
+                String nameSong = c.getString(2);
+                String artist = c.getString(3);
+                long idAlbum = Long.parseLong(c.getString(4));
+                arrayList.add(new Song(id, nameSong, artist, idAlbum));
+            }
+            while (c.moveToNext());
+        }
+        return arrayList;
+    }
+
+    public ArrayList<Song> selectListSongByIdPlaylist(long idPlaylist) {
+        ArrayList<Song> arrayList = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String selectQuery = "SELECT * FROM "+ LISTSONG+" WHERE id= "+idPlaylist;
+        Cursor c = db.rawQuery(selectQuery, null);
+        if (c.moveToFirst()) {
+            do {
+                long id = Long.parseLong(c.getString(1));
+                String nameSong = c.getString(2);
+                String artist = c.getString(3);
+                long idAlbum = Long.parseLong(c.getString(4));
+                arrayList.add(new Song(id, nameSong, artist, idAlbum));
+            }
+            while (c.moveToNext());
+        }
+        return arrayList;
+    }
+
+    //Xóa 1 bài hát theo id ra khỏi playlist
+    public boolean deleteSong(int id, long idSong)
+    {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.delete(LISTSONG, IDSONG + "= "+idSong +"AND "+KEY_ID+" = "+id, null) > 0;
+    }
+
+    //Xóa tất cả bài hát của 1 playlist
+    public boolean deleteSongPlaylist(int id)
+    {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.delete(LISTSONG, KEY_ID+" = "+id, null) > 0;
     }
 
 }

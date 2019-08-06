@@ -144,7 +144,7 @@ public class FragmentSongs extends Fragment implements LoaderManager.LoaderCallb
             while (musicCursor.moveToNext());
         }
 
-        mRecyclerView.setAdapter(new SongAdapter(mListSong, new SongAdapter.OnItemClickListener() {
+        mRecyclerView.setAdapter(new SongAdapter(mListSong, new SongAdapter.IOnItemClickListener() {
             @Override public void onItemClick(Song item) {
                 Toast.makeText(getActivity(),"playing " + item.getTitle(),Toast.LENGTH_SHORT+mListSong.indexOf(item)).show();
                 iControlPlayMedia.setListSong(mListSong);
