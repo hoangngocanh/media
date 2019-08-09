@@ -9,6 +9,7 @@
     tools:openDrawer="start">
 
 
+
     <com.sothree.slidinguppanel.SlidingUpPanelLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -22,14 +23,26 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
+
+
+
         <RelativeLayout
             android:id="@+id/panel_up"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
             <include layout="@layout/sample" />
         </RelativeLayout>
 
+
     </com.sothree.slidinguppanel.SlidingUpPanelLayout>
+
+    <FrameLayout
+        android:layout_marginTop="0dp"
+        android:id="@+id/container_search"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
     <android.support.design.widget.NavigationView
         android:id="@+id/nav_view"
         android:layout_width="wrap_content"

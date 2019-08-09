@@ -148,7 +148,14 @@ public class FragmentListSong extends Fragment implements LoaderManager.LoaderCa
 
     }
 
-
+    public void setRecyclerView(final ArrayList<Song> arrayResultSearch) {
+        mRecyclerView.setAdapter(new SongAdapter(arrayResultSearch, new SongAdapter.IOnItemClickListener() {
+            @Override public void onItemClick(Song item) {
+                Toast.makeText(getActivity(),"playing " + item.getTitle(),Toast.LENGTH_SHORT+mListSong.indexOf(item)).show();
+                iControlPlayMedia.playSong(arrayResultSearch.indexOf(item));
+            }
+        },getContext()));
+    }
 
 
 }

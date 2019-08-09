@@ -1,5 +1,6 @@
 package com.example.ngocanhpro.media;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.Context;
@@ -7,27 +8,36 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.Fragment;
 import android.support.design.widget.NavigationView;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.TranslateAnimation;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.example.ngocanhpro.media.adapter.SongAdapter;
 import com.example.ngocanhpro.media.db.DBHandler;
 import com.example.ngocanhpro.media.enity.Song;
 import com.example.ngocanhpro.media.fragment.FragmentListAlbum;
@@ -35,6 +45,7 @@ import com.example.ngocanhpro.media.fragment.FragmentListArtist;
 import com.example.ngocanhpro.media.fragment.FragmentListSong;
 import com.example.ngocanhpro.media.fragment.FragmentPlaySong;
 import com.example.ngocanhpro.media.fragment.FragmentPlaylist;
+import com.example.ngocanhpro.media.fragment.FragmentSearch;
 import com.example.ngocanhpro.media.fragment.FragmentSongs;
 import com.example.ngocanhpro.media.fragment.FragmentSongsDataBase;
 import com.example.ngocanhpro.media.interf.IControlPlayMedia;
@@ -56,6 +67,7 @@ import java.util.ArrayList;
     private MusicService mMusicSrv;
     private Intent mPlayIntent;
 
+    public FragmentSearch fragmentSearch = new FragmentSearch();
     public FragmentListSong fragmentListSong = new FragmentListSong();
     public FragmentListArtist fragmentListArtist = new FragmentListArtist();
     public FragmentListAlbum fragmentListAlbum = new FragmentListAlbum();
@@ -63,19 +75,27 @@ import java.util.ArrayList;
     public FragmentPlaylist fragmentPlaylist = new FragmentPlaylist();
     public FragmentSongsDataBase fragmentSongsDataBase = new FragmentSongsDataBase();
     private boolean mMusicBound=false;
-    ImageButton btnPlay, btnPlayMain, btnPrev, btnNext;
+    ImageButton btnPlay, btnPlayMain, btnPrev, btnNext, btnSearch;
     TextView tvNameSong, tvNameArtist, tvTimePlay, tvTimeMax;
     SeekBar seekBar;
+    EditText edSearch;
     ImageView imgSmallCover, imgCoverSong;
     RelativeLayout panelUp;
+    private LinearLayout mLayoutBoxSearch;
     private  ImageLoader mImageLoader;
     private SlidingUpPanelLayout mLayout;
+    boolean opened, isOpenFragmentListSong = false;
+    private Menu mMenu;
 
-    @Override
+
+
+        @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        edSearch = (EditText) findViewById(R.id.ed_search);
+        mLayoutBoxSearch = (LinearLayout) findViewById(R.id.box_search);
         mLayout = (SlidingUpPanelLayout) findViewById(R.id.sliding_panel);
         imgSmallCover = (ImageView) findViewById(R.id.img_song_small_cover);
         imgCoverSong = (ImageView) findViewById(R.id.img_song_cover);
@@ -91,9 +111,13 @@ import java.util.ArrayList;
         seekBar = (SeekBar) findViewById(R.id.seek_bar);
         tvTimeMax = (TextView) findViewById(R.id.end_time);
         tvTimePlay = (TextView) findViewById(R.id.start_time);
+        btnSearch = (ImageButton) findViewById(R.id.btn_search);
+
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle("Welcome");
+        toolbar.setTitleTextColor(Color.WHITE);
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -150,8 +174,7 @@ import java.util.ArrayList;
         });
 
         setSeekBarTouch(seekBar);
-
-
+        searchEditText();
 
 
     }
@@ -235,8 +258,11 @@ import java.util.ArrayList;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
+        mMenu = menu;
+
         return true;
     }
 
@@ -249,13 +275,16 @@ import java.util.ArrayList;
         int id = item.getItemId();
 
         if (id == R.id.nav_artists) {
-//            fragmentListSong.sortByArist();
+            getSupportActionBar().setTitle("Artists");
             openFragmentArtist();
         } else if (id == R.id.nav_albums) {
+            getSupportActionBar().setTitle("Albums");
             opentFragmetAlbum();
         } else if (id == R.id.nav_songs) {
+            getSupportActionBar().setTitle("Songs");
             opentFragmentListSong();
         } else if (id == R.id.nav_playlists) {
+            getSupportActionBar().setTitle("Playlists");
             opentFragmentPlayList();
         } else if (id == R.id.nav_snapdragon) {
         }
@@ -264,6 +293,22 @@ import java.util.ArrayList;
         return true;
     }
 
+        @Override
+        public boolean onOptionsItemSelected(MenuItem item) {
+            // Handle action bar item clicks here. The action bar will
+            // automatically handle clicks on the Home/Up button, so long
+            // as you specify a parent activity in AndroidManifest.xml.
+            int id = item.getItemId();
+
+            //noinspection SimplifiableIfStatement
+            if (id == R.id.btn_search) {
+//                opentFragmentSearch();
+                opendBoxSearch();
+
+            }
+
+            return super.onOptionsItemSelected(item);
+        }
 
 
     @Override
@@ -281,6 +326,8 @@ import java.util.ArrayList;
             fragmentPlaylist.setOnHeadlineSelectedListener(this);
         } else if (fragment instanceof FragmentSongsDataBase) {
             fragmentSongsDataBase.setOnHeadlineSelectedListener(this);
+        } else if (fragment instanceof FragmentSearch) {
+            fragmentSearch.setOnHeadlineSelectedListener(this);
         }
     }
 
@@ -299,6 +346,7 @@ import java.util.ArrayList;
             ft.replace(R.id.container, fragmentSongs, "fragmentSong").addToBackStack(null);
         }
         ft.commit();
+        closeBoxSearch();
     }
 
     @Override
@@ -309,6 +357,7 @@ import java.util.ArrayList;
         mLayout.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
         panelUp.setVisibility(View.VISIBLE);
         upLoadImageSong();
+        hideKeyboard(this);
 
     }
 
@@ -350,6 +399,10 @@ import java.util.ArrayList;
     public void setListSong(ArrayList<Song> array) {
         if(mMusicSrv != null)
             mMusicSrv.setList(array);
+        fragmentSearch.setListSong(array);
+        if (mList.size() == 0) {
+            mList = array;
+        }
     }
 
     @Override
@@ -469,6 +522,7 @@ import java.util.ArrayList;
             ft.replace(R.id.container, fragmentListArtist, "fragmentArtist").addToBackStack(null);
         }
         ft.commit();
+        closeBoxSearch();
     }
 
 
@@ -481,9 +535,11 @@ import java.util.ArrayList;
             ft.replace(R.id.container, fragmentListAlbum, "fragmentAlbum").addToBackStack(null);
         }
         ft.commit();
+        closeBoxSearch();
     }
 
     public void opentFragmentPlayList() {
+        closeBoxSearch();
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         if (fragmentPlaylist.isAdded()) {
             ft.show(fragmentPlaylist);
@@ -492,6 +548,7 @@ import java.util.ArrayList;
             ft.replace(R.id.container, fragmentPlaylist, "fragmentPlaylist").addToBackStack(null);
         }
         ft.commit();
+
     }
 
     private void opentFragmentListSong() {
@@ -503,6 +560,7 @@ import java.util.ArrayList;
             ft.replace(R.id.container, fragmentListSong, "fragmentSong").addToBackStack(null);
         }
         ft.commit();
+
     }
 
     @Override
@@ -515,6 +573,7 @@ import java.util.ArrayList;
             ft.replace(R.id.container, fragmentSongsDataBase, "fragmentSong").addToBackStack(null);
         }
         ft.commit();
+        closeBoxSearch();
     }
 
     @Override
@@ -527,4 +586,86 @@ import java.util.ArrayList;
         fragmentSongsDataBase.setIdPlaylist(id);
     }
 
+
+    public void opendBoxSearch() {
+        if(!opened){
+            mMenu.getItem(0).setIcon(ContextCompat.getDrawable(this, R.drawable.ic_down));
+            opentFragmentListSong();
+            mLayoutBoxSearch.setVisibility(View.VISIBLE);
+            edSearch.setVisibility(View.VISIBLE);
+            TranslateAnimation animate = new TranslateAnimation(
+                    0,
+                    0,
+                    mLayoutBoxSearch.getHeight(),
+                    0);
+            animate.setDuration(500);
+            animate.setFillAfter(true);
+            mLayoutBoxSearch.startAnimation(animate);
+
+        } else {
+            mMenu.getItem(0).setIcon(ContextCompat.getDrawable(this, R.drawable.search));
+            hideKeyboard(this);
+
+            TranslateAnimation animate = new TranslateAnimation(
+                    0,
+                    0,
+                    0,
+                    mLayoutBoxSearch.getHeight());
+            animate.setDuration(500);
+            animate.setFillAfter(true);
+            mLayoutBoxSearch.startAnimation(animate);
+            edSearch.setVisibility(View.GONE);
+            mLayoutBoxSearch.setVisibility(View.GONE);
+            edSearch.getText().clear();
+        }
+        opened = !opened;
     }
+
+    //Ẩn bàn phím
+    public void hideKeyboard(Activity activity) {
+        if(getCurrentFocus()!=null) {
+            InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+            inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), 0);
+        }
+    }
+
+    public void searchEditText() {
+        final ArrayList<Song> mResutlFillList = new ArrayList<>();
+        edSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                mResutlFillList.clear();
+                for (final Song mWords : mList) {
+                    if (mWords.getTitle().toLowerCase().startsWith(s.toString())) {
+                        mResutlFillList.add(mWords);
+                    }
+                }
+                fragmentListSong.setRecyclerView(mResutlFillList);
+            }
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+    }
+
+    public void closeBoxSearch() {
+        mMenu.getItem(0).setIcon(ContextCompat.getDrawable(this, R.drawable.search));
+        hideKeyboard(this);
+
+        TranslateAnimation animate = new TranslateAnimation(
+                0,
+                0,
+                0,
+                mLayoutBoxSearch.getHeight());
+        animate.setDuration(500);
+        animate.setFillAfter(true);
+        mLayoutBoxSearch.startAnimation(animate);
+        edSearch.setVisibility(View.GONE);
+        mLayoutBoxSearch.setVisibility(View.GONE);
+        edSearch.getText().clear();
+    }
+
+}

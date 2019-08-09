@@ -13,6 +13,7 @@
     <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
 
     <application
+        android:windowSoftInputMode="stateHidden"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -22,7 +23,8 @@
         <service android:name="com.example.ngocanhpro.media.services.MusicService" />
         <activity
             android:name=".MainActivity"
-            android:label="Music M"
+            android:windowSoftInputMode="stateHidden"
+            android:label="Music Media"
             android:theme="@style/AppTheme.NoActionBar">
 
             <intent-filter>

@@ -1,6 +1,9 @@
 package com.example.ngocanhpro.media.adapter;
 
+import android.content.ContentUris;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -18,6 +21,7 @@ import com.example.ngocanhpro.media.enity.Playlist;
 import com.example.ngocanhpro.media.interf.IUpdateLists;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListener;
 
 import java.util.ArrayList;
 
@@ -60,6 +64,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyView
     public void onBindViewHolder(final MyViewHolder holder, int position) {
         final Playlist playlist = mPlaylists.get(position);
         holder.tvName.setText(playlist.getName());
+
         holder.btnExpand.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
@@ -97,6 +102,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyView
         });
         holder.bind(mPlaylists.get(position), listener);
 
+
     }
 
     @Override
@@ -106,13 +112,18 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyView
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
         public TextView tvName;
-        public ImageView img;
+        public ImageView img1, img2, img3, img4;
         public Button btnExpand;
 
         public MyViewHolder(View view) {
             super(view);
             tvName = (TextView) view.findViewById(R.id.tv_namePlaylist);
             btnExpand = (Button) view.findViewById(R.id.btn_expand);
+            img1 = (ImageView) view.findViewById(R.id.img_song1);
+            img2 = (ImageView) view.findViewById(R.id.img_song2);
+            img3 = (ImageView) view.findViewById(R.id.img_song3);
+            img4 = (ImageView) view.findViewById(R.id.img_song4);
+
 
         }
         public void bind(final Playlist item, final IOnItemClickListener listener) {

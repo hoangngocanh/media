@@ -15,6 +15,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.PopupMenu;
@@ -33,8 +35,11 @@ import com.nostra13.universalimageloader.core.listener.SimpleImageLoadingListene
 
 import java.util.ArrayList;
 
-public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> {
+
+
+public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> implements Filterable {
     private ArrayList<Song> mSongs = new ArrayList<>();
+    private ArrayList<Song> mResutlFillList = new ArrayList<>();
     private ImageLoader mImageLoader;
     public FragmentListSong fragmentListSong = new FragmentListSong();
     private Context mContext;
@@ -43,6 +48,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
     private Song mSong;
     //init data base
     private DBHandler mDB;
+    private CustomFilter mFilter;
 
 
 
@@ -60,11 +66,10 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
         mImageLoader = ImageLoader.getInstance();
         mImageLoader.init(ImageLoaderConfiguration.createDefault(context));
         mDB = new DBHandler(mContext);
+
+        mFilter = new CustomFilter(this);
     }
 
-    public SongAdapter(ArrayList<Song> songs) {
-        this.mSongs = songs;
-    }
 
     @Override
     public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -233,6 +238,43 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.MyViewHolder> 
 
         });
         dialog.show();
+    }
+
+    @Override
+    public Filter getFilter() {
+        return mFilter;
+    }
+
+    //bộ lọc trả về kết quả adapter song  theo thanh search
+    public class CustomFilter extends Filter {
+        private SongAdapter mSongAdapter;
+        public CustomFilter(SongAdapter mAdapter) {
+            super();
+            this.mSongAdapter = mAdapter;
+        }
+        @Override
+        protected FilterResults performFiltering(CharSequence constraint) {
+            mResutlFillList.clear();
+            final FilterResults results = new FilterResults();
+            if (constraint.length() == 0) {
+//                mResutlFillList.addAll(mSongs);
+            } else {
+                final String filterPattern = constraint.toString().toLowerCase().trim();
+                for (final Song mWords : mSongs) {
+                    if (mWords.getTitle().toLowerCase().startsWith(filterPattern)) {
+                        mResutlFillList.add(mWords);
+                    }
+                }
+            }
+            System.out.println("Count Number " + mResutlFillList.size());
+            results.values = mResutlFillList;
+            results.count = mResutlFillList.size();
+            return results;
+        }
+        @Override
+        protected void publishResults(CharSequence constraint, FilterResults results) {
+            this.mSongAdapter.notifyDataSetChanged();
+        }
     }
 }
 

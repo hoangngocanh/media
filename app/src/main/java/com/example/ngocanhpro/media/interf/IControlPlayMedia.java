@@ -27,5 +27,4 @@ public interface IControlPlayMedia {
     void openFragmentSongsPlaylist();
     void setIdPlaylist(long id);
 
-
 }
